@@ -5,4 +5,4 @@ site: 'https://medium.com/@dnfisher/foursquare-enterprise-powerful-data-beautifu
 published: true
 ---
 
-Some text goes here
+In 2017, ustwo and Foursquare partnered to create a new home for Foursquare's suite of brand new location intelligence tools
