@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Saucedrop: Hot Sauce as a Service
+title: Saucedrop aka Hot Sauce as a Service
 site: 'https://medium.com/@dnfisher/sunset-for-saucedrop-and-some-things-we-learned-along-the-way-84624549f88d'
 published: true
 ---
