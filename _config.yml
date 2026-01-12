@@ -31,6 +31,6 @@ github:              dnfisher
            
 
 # Gems
-plugins:
+plugins: []
   # - jekyll-paginate
   # - jekyll-gist
