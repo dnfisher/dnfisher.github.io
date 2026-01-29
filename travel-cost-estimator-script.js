@@ -30,6 +30,7 @@ const apiCache = {
 // - Open-Meteo (weather) - unlimited, no key
 // - Frankfurter (currency) - unlimited, no key
 // - US State Dept (travel advisories) - free, no key
+// - Wikivoyage (descriptions) - no key needed
 
 // APIs that NEED keys (set up account at these sites):
 const API_KEYS = {
@@ -38,15 +39,49 @@ const API_KEYS = {
         clientId: '7fvKA80GShJnStxs1wjCJO2gGRr3q7a0',
         clientSecret: 'hKXHWj1xB3fVAseN'
     },
+    // GeoNames: Register free at https://www.geonames.org/login (30k credits/day)
+    geonames: {
+        username: 'dnfisher'
+    },
     // Optional: OpenRouteService for isochrones: https://openrouteservice.org
     openRouteService: ''   // Free key, 2000 calls/day
 };
 
 // Country data for currency and safety lookups
 const COUNTRY_DATA = {
+    // North America
     'USA': { currency: 'USD', iso2: 'US', iso3: 'USA' },
     'Canada': { currency: 'CAD', iso2: 'CA', iso3: 'CAN' },
     'Mexico': { currency: 'MXN', iso2: 'MX', iso3: 'MEX' },
+    // Central America
+    'Belize': { currency: 'BZD', iso2: 'BZ', iso3: 'BLZ' },
+    'Guatemala': { currency: 'GTQ', iso2: 'GT', iso3: 'GTM' },
+    'Honduras': { currency: 'HNL', iso2: 'HN', iso3: 'HND' },
+    'El Salvador': { currency: 'USD', iso2: 'SV', iso3: 'SLV' },
+    'Nicaragua': { currency: 'NIO', iso2: 'NI', iso3: 'NIC' },
+    'Costa Rica': { currency: 'CRC', iso2: 'CR', iso3: 'CRI' },
+    'Panama': { currency: 'USD', iso2: 'PA', iso3: 'PAN' },
+    // Caribbean
+    'Dominican Republic': { currency: 'DOP', iso2: 'DO', iso3: 'DOM' },
+    'Bahamas': { currency: 'BSD', iso2: 'BS', iso3: 'BHS' },
+    'Cuba': { currency: 'CUP', iso2: 'CU', iso3: 'CUB' },
+    'Jamaica': { currency: 'JMD', iso2: 'JM', iso3: 'JAM' },
+    'Trinidad and Tobago': { currency: 'TTD', iso2: 'TT', iso3: 'TTO' },
+    'Barbados': { currency: 'BBD', iso2: 'BB', iso3: 'BRB' },
+    'Aruba': { currency: 'AWG', iso2: 'AW', iso3: 'ABW' },
+    'Curacao': { currency: 'ANG', iso2: 'CW', iso3: 'CUW' },
+    // South America
+    'Colombia': { currency: 'COP', iso2: 'CO', iso3: 'COL' },
+    'Peru': { currency: 'PEN', iso2: 'PE', iso3: 'PER' },
+    'Argentina': { currency: 'ARS', iso2: 'AR', iso3: 'ARG' },
+    'Brazil': { currency: 'BRL', iso2: 'BR', iso3: 'BRA' },
+    'Chile': { currency: 'CLP', iso2: 'CL', iso3: 'CHL' },
+    'Ecuador': { currency: 'USD', iso2: 'EC', iso3: 'ECU' },
+    'Bolivia': { currency: 'BOB', iso2: 'BO', iso3: 'BOL' },
+    'Uruguay': { currency: 'UYU', iso2: 'UY', iso3: 'URY' },
+    'Paraguay': { currency: 'PYG', iso2: 'PY', iso3: 'PRY' },
+    'Venezuela': { currency: 'VES', iso2: 'VE', iso3: 'VEN' },
+    // Europe
     'UK': { currency: 'GBP', iso2: 'GB', iso3: 'GBR' },
     'France': { currency: 'EUR', iso2: 'FR', iso3: 'FRA' },
     'Spain': { currency: 'EUR', iso2: 'ES', iso3: 'ESP' },
@@ -56,15 +91,33 @@ const COUNTRY_DATA = {
     'Portugal': { currency: 'EUR', iso2: 'PT', iso3: 'PRT' },
     'Ireland': { currency: 'EUR', iso2: 'IE', iso3: 'IRL' },
     'Iceland': { currency: 'ISK', iso2: 'IS', iso3: 'ISL' },
+    'Belgium': { currency: 'EUR', iso2: 'BE', iso3: 'BEL' },
+    'Austria': { currency: 'EUR', iso2: 'AT', iso3: 'AUT' },
+    'Switzerland': { currency: 'CHF', iso2: 'CH', iso3: 'CHE' },
+    'Greece': { currency: 'EUR', iso2: 'GR', iso3: 'GRC' },
+    'Croatia': { currency: 'EUR', iso2: 'HR', iso3: 'HRV' },
+    'Czech Republic': { currency: 'CZK', iso2: 'CZ', iso3: 'CZE' },
+    'Poland': { currency: 'PLN', iso2: 'PL', iso3: 'POL' },
+    'Hungary': { currency: 'HUF', iso2: 'HU', iso3: 'HUN' },
+    'Sweden': { currency: 'SEK', iso2: 'SE', iso3: 'SWE' },
+    'Norway': { currency: 'NOK', iso2: 'NO', iso3: 'NOR' },
+    'Denmark': { currency: 'DKK', iso2: 'DK', iso3: 'DNK' },
+    'Finland': { currency: 'EUR', iso2: 'FI', iso3: 'FIN' },
+    'Turkey': { currency: 'TRY', iso2: 'TR', iso3: 'TUR' },
+    'Morocco': { currency: 'MAD', iso2: 'MA', iso3: 'MAR' },
+    // Asia
     'Japan': { currency: 'JPY', iso2: 'JP', iso3: 'JPN' },
     'Thailand': { currency: 'THB', iso2: 'TH', iso3: 'THA' },
     'Indonesia': { currency: 'IDR', iso2: 'ID', iso3: 'IDN' },
-    'Colombia': { currency: 'COP', iso2: 'CO', iso3: 'COL' },
-    'Peru': { currency: 'PEN', iso2: 'PE', iso3: 'PER' },
-    'Argentina': { currency: 'ARS', iso2: 'AR', iso3: 'ARG' },
-    'Dominican Republic': { currency: 'DOP', iso2: 'DO', iso3: 'DOM' },
-    'Bahamas': { currency: 'BSD', iso2: 'BS', iso3: 'BHS' },
-    'Cuba': { currency: 'CUP', iso2: 'CU', iso3: 'CUB' }
+    'Vietnam': { currency: 'VND', iso2: 'VN', iso3: 'VNM' },
+    'Philippines': { currency: 'PHP', iso2: 'PH', iso3: 'PHL' },
+    'South Korea': { currency: 'KRW', iso2: 'KR', iso3: 'KOR' },
+    'Singapore': { currency: 'SGD', iso2: 'SG', iso3: 'SGP' },
+    'Malaysia': { currency: 'MYR', iso2: 'MY', iso3: 'MYS' },
+    // Oceania
+    'Australia': { currency: 'AUD', iso2: 'AU', iso3: 'AUS' },
+    'New Zealand': { currency: 'NZD', iso2: 'NZ', iso3: 'NZL' },
+    'Fiji': { currency: 'FJD', iso2: 'FJ', iso3: 'FJI' }
 };
 
 // ============================================
@@ -457,17 +510,347 @@ function getIATACode(cityOrState) {
 }
 
 // ============================================
+// WIKIPEDIA IMAGE API (No key needed!)
+// Fetches destination images from Wikipedia
+// ============================================
+async function fetchWikipediaImage(cityName, countryName) {
+    const cacheKey = `wikipedia-img-${cityName}`;
+    if (apiCache.images && apiCache.images[cacheKey]) {
+        return apiCache.images[cacheKey];
+    }
+
+    try {
+        // First, get the page and its main image
+        const searchTitle = encodeURIComponent(cityName);
+        const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${searchTitle}&prop=pageimages|info&pithumbsize=800&format=json&origin=*`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Wikipedia API failed');
+
+        const data = await response.json();
+        const pages = data.query?.pages;
+
+        if (pages) {
+            const pageId = Object.keys(pages)[0];
+            if (pageId !== '-1' && pages[pageId].thumbnail) {
+                const thumb = pages[pageId].thumbnail;
+                // Get a larger version by modifying the URL
+                const largeUrl = thumb.source.replace(/\/\d+px-/, '/800px-');
+                const smallUrl = thumb.source.replace(/\/\d+px-/, '/200px-');
+
+                const result = {
+                    url: largeUrl,
+                    thumb: smallUrl,
+                    credit: {
+                        name: 'Wikipedia',
+                        link: `https://en.wikipedia.org/wiki/${searchTitle}`
+                    }
+                };
+
+                // Cache the result
+                if (!apiCache.images) apiCache.images = {};
+                apiCache.images[cacheKey] = result;
+                return result;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Wikipedia image error:', error);
+        return null;
+    }
+}
+
+// ============================================
+// GEONAMES API - Dynamic City Discovery
+// Fetches cities within map bounds
+// ============================================
+
+// Default pricing by region (used for GeoNames cities without curated data)
+const REGION_PRICING = {
+    // North America
+    'US': { accommodation: { budget: 80, mid: 150, luxury: 350 }, activities: 50, food: 55, flightBase: 200 },
+    'CA': { accommodation: { budget: 70, mid: 140, luxury: 320 }, activities: 45, food: 50, flightBase: 250 },
+    'MX': { accommodation: { budget: 35, mid: 70, luxury: 180 }, activities: 30, food: 30, flightBase: 200 },
+    // Central America
+    'CR': { accommodation: { budget: 40, mid: 90, luxury: 220 }, activities: 50, food: 35, flightBase: 300 },
+    'PA': { accommodation: { budget: 45, mid: 100, luxury: 250 }, activities: 45, food: 35, flightBase: 280 },
+    'GT': { accommodation: { budget: 30, mid: 65, luxury: 160 }, activities: 35, food: 25, flightBase: 250 },
+    'BZ': { accommodation: { budget: 50, mid: 120, luxury: 300 }, activities: 60, food: 40, flightBase: 350 },
+    'HN': { accommodation: { budget: 30, mid: 60, luxury: 150 }, activities: 35, food: 25, flightBase: 300 },
+    'NI': { accommodation: { budget: 25, mid: 55, luxury: 140 }, activities: 30, food: 20, flightBase: 320 },
+    'SV': { accommodation: { budget: 30, mid: 60, luxury: 150 }, activities: 30, food: 25, flightBase: 300 },
+    // Caribbean
+    'CU': { accommodation: { budget: 35, mid: 80, luxury: 200 }, activities: 35, food: 30, flightBase: 280 },
+    'DO': { accommodation: { budget: 40, mid: 100, luxury: 280 }, activities: 45, food: 35, flightBase: 250 },
+    'JM': { accommodation: { budget: 50, mid: 120, luxury: 320 }, activities: 50, food: 45, flightBase: 280 },
+    'BS': { accommodation: { budget: 80, mid: 180, luxury: 450 }, activities: 60, food: 60, flightBase: 250 },
+    'PR': { accommodation: { budget: 70, mid: 150, luxury: 380 }, activities: 50, food: 50, flightBase: 150 },
+    'TT': { accommodation: { budget: 50, mid: 110, luxury: 280 }, activities: 45, food: 40, flightBase: 350 },
+    // South America
+    'BR': { accommodation: { budget: 40, mid: 100, luxury: 280 }, activities: 50, food: 40, flightBase: 500 },
+    'AR': { accommodation: { budget: 35, mid: 80, luxury: 200 }, activities: 40, food: 45, flightBase: 550 },
+    'CO': { accommodation: { budget: 30, mid: 70, luxury: 180 }, activities: 35, food: 30, flightBase: 250 },
+    'PE': { accommodation: { budget: 30, mid: 70, luxury: 180 }, activities: 35, food: 40, flightBase: 400 },
+    'CL': { accommodation: { budget: 40, mid: 90, luxury: 220 }, activities: 45, food: 40, flightBase: 500 },
+    'EC': { accommodation: { budget: 30, mid: 65, luxury: 160 }, activities: 40, food: 25, flightBase: 380 },
+    'BO': { accommodation: { budget: 25, mid: 50, luxury: 130 }, activities: 30, food: 20, flightBase: 450 },
+    'UY': { accommodation: { budget: 40, mid: 90, luxury: 220 }, activities: 40, food: 45, flightBase: 600 },
+    'PY': { accommodation: { budget: 30, mid: 60, luxury: 150 }, activities: 30, food: 25, flightBase: 550 },
+    'VE': { accommodation: { budget: 35, mid: 70, luxury: 180 }, activities: 35, food: 30, flightBase: 400 },
+    // Europe - Western
+    'GB': { accommodation: { budget: 80, mid: 180, luxury: 450 }, activities: 60, food: 65, flightBase: 400 },
+    'FR': { accommodation: { budget: 70, mid: 160, luxury: 400 }, activities: 55, food: 60, flightBase: 380 },
+    'DE': { accommodation: { budget: 60, mid: 140, luxury: 340 }, activities: 50, food: 50, flightBase: 400 },
+    'IT': { accommodation: { budget: 65, mid: 140, luxury: 350 }, activities: 50, food: 55, flightBase: 420 },
+    'ES': { accommodation: { budget: 55, mid: 120, luxury: 300 }, activities: 45, food: 45, flightBase: 380 },
+    'PT': { accommodation: { budget: 50, mid: 110, luxury: 280 }, activities: 40, food: 45, flightBase: 350 },
+    'NL': { accommodation: { budget: 70, mid: 150, luxury: 350 }, activities: 50, food: 55, flightBase: 400 },
+    'BE': { accommodation: { budget: 65, mid: 140, luxury: 340 }, activities: 50, food: 55, flightBase: 420 },
+    'AT': { accommodation: { budget: 55, mid: 130, luxury: 320 }, activities: 50, food: 50, flightBase: 450 },
+    'CH': { accommodation: { budget: 100, mid: 200, luxury: 500 }, activities: 70, food: 80, flightBase: 480 },
+    'IE': { accommodation: { budget: 65, mid: 150, luxury: 350 }, activities: 45, food: 50, flightBase: 350 },
+    // Europe - Northern
+    'SE': { accommodation: { budget: 70, mid: 160, luxury: 400 }, activities: 55, food: 60, flightBase: 480 },
+    'NO': { accommodation: { budget: 90, mid: 180, luxury: 450 }, activities: 65, food: 70, flightBase: 500 },
+    'DK': { accommodation: { budget: 70, mid: 160, luxury: 400 }, activities: 55, food: 60, flightBase: 450 },
+    'FI': { accommodation: { budget: 65, mid: 150, luxury: 380 }, activities: 55, food: 55, flightBase: 500 },
+    'IS': { accommodation: { budget: 80, mid: 180, luxury: 400 }, activities: 100, food: 70, flightBase: 350 },
+    // Europe - Eastern
+    'PL': { accommodation: { budget: 35, mid: 80, luxury: 200 }, activities: 35, food: 30, flightBase: 420 },
+    'CZ': { accommodation: { budget: 45, mid: 100, luxury: 250 }, activities: 40, food: 35, flightBase: 450 },
+    'HU': { accommodation: { budget: 40, mid: 90, luxury: 220 }, activities: 40, food: 35, flightBase: 480 },
+    'HR': { accommodation: { budget: 50, mid: 110, luxury: 280 }, activities: 45, food: 40, flightBase: 500 },
+    'GR': { accommodation: { budget: 50, mid: 110, luxury: 280 }, activities: 45, food: 40, flightBase: 480 },
+    'RO': { accommodation: { budget: 30, mid: 70, luxury: 180 }, activities: 30, food: 25, flightBase: 500 },
+    'BG': { accommodation: { budget: 30, mid: 65, luxury: 160 }, activities: 30, food: 25, flightBase: 520 },
+    'RS': { accommodation: { budget: 30, mid: 70, luxury: 180 }, activities: 30, food: 25, flightBase: 550 },
+    // Middle East & North Africa
+    'TR': { accommodation: { budget: 40, mid: 90, luxury: 220 }, activities: 40, food: 35, flightBase: 550 },
+    'MA': { accommodation: { budget: 35, mid: 80, luxury: 250 }, activities: 40, food: 30, flightBase: 500 },
+    'EG': { accommodation: { budget: 30, mid: 70, luxury: 200 }, activities: 40, food: 25, flightBase: 600 },
+    'AE': { accommodation: { budget: 70, mid: 160, luxury: 450 }, activities: 60, food: 50, flightBase: 650 },
+    'IL': { accommodation: { budget: 70, mid: 150, luxury: 380 }, activities: 50, food: 55, flightBase: 700 },
+    'JO': { accommodation: { budget: 45, mid: 100, luxury: 260 }, activities: 50, food: 35, flightBase: 750 },
+    // Asia
+    'JP': { accommodation: { budget: 50, mid: 120, luxury: 350 }, activities: 50, food: 50, flightBase: 700 },
+    'KR': { accommodation: { budget: 45, mid: 100, luxury: 280 }, activities: 45, food: 40, flightBase: 700 },
+    'CN': { accommodation: { budget: 40, mid: 90, luxury: 250 }, activities: 40, food: 30, flightBase: 650 },
+    'TH': { accommodation: { budget: 25, mid: 60, luxury: 180 }, activities: 25, food: 20, flightBase: 600 },
+    'VN': { accommodation: { budget: 25, mid: 60, luxury: 150 }, activities: 30, food: 20, flightBase: 650 },
+    'ID': { accommodation: { budget: 30, mid: 80, luxury: 250 }, activities: 30, food: 25, flightBase: 750 },
+    'PH': { accommodation: { budget: 30, mid: 70, luxury: 180 }, activities: 35, food: 25, flightBase: 700 },
+    'MY': { accommodation: { budget: 35, mid: 80, luxury: 200 }, activities: 40, food: 30, flightBase: 700 },
+    'SG': { accommodation: { budget: 60, mid: 150, luxury: 400 }, activities: 55, food: 40, flightBase: 750 },
+    'IN': { accommodation: { budget: 25, mid: 60, luxury: 180 }, activities: 30, food: 20, flightBase: 700 },
+    'NP': { accommodation: { budget: 20, mid: 45, luxury: 120 }, activities: 35, food: 15, flightBase: 800 },
+    'LK': { accommodation: { budget: 30, mid: 70, luxury: 200 }, activities: 35, food: 25, flightBase: 850 },
+    'TW': { accommodation: { budget: 40, mid: 90, luxury: 250 }, activities: 40, food: 35, flightBase: 750 },
+    'HK': { accommodation: { budget: 70, mid: 160, luxury: 400 }, activities: 50, food: 45, flightBase: 700 },
+    // Oceania
+    'AU': { accommodation: { budget: 70, mid: 160, luxury: 400 }, activities: 60, food: 60, flightBase: 900 },
+    'NZ': { accommodation: { budget: 60, mid: 140, luxury: 350 }, activities: 60, food: 55, flightBase: 950 },
+    'FJ': { accommodation: { budget: 70, mid: 180, luxury: 500 }, activities: 60, food: 50, flightBase: 900 },
+    // Africa
+    'ZA': { accommodation: { budget: 40, mid: 100, luxury: 280 }, activities: 50, food: 35, flightBase: 800 },
+    'KE': { accommodation: { budget: 45, mid: 110, luxury: 300 }, activities: 80, food: 35, flightBase: 850 },
+    'TZ': { accommodation: { budget: 50, mid: 120, luxury: 350 }, activities: 100, food: 35, flightBase: 900 },
+    'GH': { accommodation: { budget: 40, mid: 90, luxury: 220 }, activities: 40, food: 30, flightBase: 800 },
+    'NG': { accommodation: { budget: 50, mid: 110, luxury: 280 }, activities: 40, food: 35, flightBase: 850 },
+    // Default fallback
+    'DEFAULT': { accommodation: { budget: 50, mid: 100, luxury: 250 }, activities: 40, food: 40, flightBase: 500 }
+};
+
+// Cache for GeoNames results
+if (!apiCache.geonames) apiCache.geonames = {};
+
+// Fetch cities from GeoNames within a bounding box
+async function fetchGeoNamesCities(bounds, maxRows = 50) {
+    if (!API_KEYS.geonames.username) {
+        console.warn('GeoNames username not configured');
+        return [];
+    }
+
+    const cacheKey = `${bounds.north.toFixed(1)},${bounds.south.toFixed(1)},${bounds.east.toFixed(1)},${bounds.west.toFixed(1)}`;
+    if (apiCache.geonames[cacheKey]) {
+        return apiCache.geonames[cacheKey];
+    }
+
+    try {
+        // Use citiesJSON endpoint for populated places within bounds
+        const url = `https://secure.geonames.org/citiesJSON?north=${bounds.north}&south=${bounds.south}&east=${bounds.east}&west=${bounds.west}&maxRows=${maxRows}&username=${API_KEYS.geonames.username}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('GeoNames API failed');
+
+        const data = await response.json();
+
+        if (data.geonames && data.geonames.length > 0) {
+            const cities = data.geonames.map(city => {
+                const countryCode = city.countrycode || 'DEFAULT';
+                const pricing = REGION_PRICING[countryCode] || REGION_PRICING['DEFAULT'];
+
+                // Estimate flight price based on distance from NYC (rough approximation)
+                const distanceFromNYC = calculateDistance(40.71, -74.01, city.lat, city.lng);
+                const flightMultiplier = Math.max(0.8, Math.min(2.5, distanceFromNYC / 3000));
+
+                return {
+                    city: city.name,
+                    region: city.adminName1 || getCountryName(city.countrycode),
+                    country: getCountryName(city.countrycode), // Full country name for display
+                    countryCode: city.countrycode, // ISO code for API lookups
+                    lat: city.lat,
+                    lon: city.lng,
+                    population: city.population,
+                    type: 'fly', // Dynamic cities are fly destinations
+                    flightFromNYC: {
+                        low: Math.round(pricing.flightBase * flightMultiplier * 0.7),
+                        mid: Math.round(pricing.flightBase * flightMultiplier),
+                        high: Math.round(pricing.flightBase * flightMultiplier * 1.5)
+                    },
+                    accommodation: pricing.accommodation,
+                    activities: pricing.activities,
+                    food: pricing.food,
+                    description: null, // Will be fetched from Wikivoyage
+                    seasonality: { winter: 1.0, spring: 1.0, summer: 1.0, fall: 1.0 },
+                    isGeoNames: true // Flag to identify dynamically fetched cities
+                };
+            });
+
+            // Sort by population (larger cities first)
+            cities.sort((a, b) => (b.population || 0) - (a.population || 0));
+
+            apiCache.geonames[cacheKey] = cities;
+            return cities;
+        }
+        return [];
+    } catch (error) {
+        console.error('GeoNames error:', error);
+        return [];
+    }
+}
+
+// Helper to get country name from code
+function getCountryName(code) {
+    const countryNames = {
+        'US': 'USA', 'CA': 'Canada', 'MX': 'Mexico', 'GB': 'UK', 'FR': 'France',
+        'DE': 'Germany', 'IT': 'Italy', 'ES': 'Spain', 'PT': 'Portugal', 'NL': 'Netherlands',
+        'BE': 'Belgium', 'AT': 'Austria', 'CH': 'Switzerland', 'IE': 'Ireland',
+        'SE': 'Sweden', 'NO': 'Norway', 'DK': 'Denmark', 'FI': 'Finland', 'IS': 'Iceland',
+        'PL': 'Poland', 'CZ': 'Czech Republic', 'HU': 'Hungary', 'HR': 'Croatia', 'GR': 'Greece',
+        'RO': 'Romania', 'BG': 'Bulgaria', 'RS': 'Serbia',
+        'TR': 'Turkey', 'MA': 'Morocco', 'EG': 'Egypt', 'AE': 'UAE', 'IL': 'Israel', 'JO': 'Jordan',
+        'JP': 'Japan', 'KR': 'South Korea', 'CN': 'China', 'TH': 'Thailand', 'VN': 'Vietnam',
+        'ID': 'Indonesia', 'PH': 'Philippines', 'MY': 'Malaysia', 'SG': 'Singapore',
+        'IN': 'India', 'NP': 'Nepal', 'LK': 'Sri Lanka', 'TW': 'Taiwan', 'HK': 'Hong Kong',
+        'AU': 'Australia', 'NZ': 'New Zealand', 'FJ': 'Fiji',
+        'BR': 'Brazil', 'AR': 'Argentina', 'CO': 'Colombia', 'PE': 'Peru', 'CL': 'Chile',
+        'EC': 'Ecuador', 'BO': 'Bolivia', 'UY': 'Uruguay', 'PY': 'Paraguay', 'VE': 'Venezuela',
+        'CR': 'Costa Rica', 'PA': 'Panama', 'GT': 'Guatemala', 'BZ': 'Belize',
+        'HN': 'Honduras', 'NI': 'Nicaragua', 'SV': 'El Salvador',
+        'CU': 'Cuba', 'DO': 'Dominican Republic', 'JM': 'Jamaica', 'BS': 'Bahamas', 'PR': 'Puerto Rico', 'TT': 'Trinidad and Tobago',
+        'ZA': 'South Africa', 'KE': 'Kenya', 'TZ': 'Tanzania', 'GH': 'Ghana', 'NG': 'Nigeria'
+    };
+    return countryNames[code] || code;
+}
+
+// Helper to get currency code from country code
+function getCurrencyForCountry(code) {
+    const currencies = {
+        'US': 'USD', 'CA': 'CAD', 'MX': 'MXN', 'GB': 'GBP', 'FR': 'EUR', 'DE': 'EUR',
+        'IT': 'EUR', 'ES': 'EUR', 'PT': 'EUR', 'NL': 'EUR', 'BE': 'EUR', 'AT': 'EUR',
+        'CH': 'CHF', 'IE': 'EUR', 'SE': 'SEK', 'NO': 'NOK', 'DK': 'DKK', 'FI': 'EUR',
+        'IS': 'ISK', 'PL': 'PLN', 'CZ': 'CZK', 'HU': 'HUF', 'HR': 'EUR', 'GR': 'EUR',
+        'RO': 'RON', 'BG': 'BGN', 'RS': 'RSD', 'TR': 'TRY', 'MA': 'MAD', 'EG': 'EGP',
+        'AE': 'AED', 'IL': 'ILS', 'JO': 'JOD', 'JP': 'JPY', 'KR': 'KRW', 'CN': 'CNY',
+        'TH': 'THB', 'VN': 'VND', 'ID': 'IDR', 'PH': 'PHP', 'MY': 'MYR', 'SG': 'SGD',
+        'IN': 'INR', 'NP': 'NPR', 'LK': 'LKR', 'TW': 'TWD', 'HK': 'HKD',
+        'AU': 'AUD', 'NZ': 'NZD', 'FJ': 'FJD',
+        'BR': 'BRL', 'AR': 'ARS', 'CO': 'COP', 'PE': 'PEN', 'CL': 'CLP',
+        'EC': 'USD', 'BO': 'BOB', 'UY': 'UYU', 'PY': 'PYG', 'VE': 'VES',
+        'CR': 'CRC', 'PA': 'USD', 'GT': 'GTQ', 'BZ': 'BZD', 'HN': 'HNL', 'NI': 'NIO', 'SV': 'USD',
+        'CU': 'CUP', 'DO': 'DOP', 'JM': 'JMD', 'BS': 'BSD', 'PR': 'USD', 'TT': 'TTD',
+        'ZA': 'ZAR', 'KE': 'KES', 'TZ': 'TZS', 'GH': 'GHS', 'NG': 'NGN'
+    };
+    return currencies[code] || 'USD';
+}
+
+// Calculate distance between two points (Haversine formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// ============================================
+// WIKIVOYAGE API (No key needed!)
+// Fetches travel descriptions from Wikivoyage
+// ============================================
+async function fetchWikivoyageDescription(cityName) {
+    const cacheKey = `wikivoyage-${cityName}`;
+    if (apiCache.descriptions && apiCache.descriptions[cacheKey]) {
+        return apiCache.descriptions[cacheKey];
+    }
+
+    try {
+        // Use Wikipedia API to fetch Wikivoyage content
+        const url = `https://en.wikivoyage.org/w/api.php?action=query&titles=${encodeURIComponent(cityName)}&prop=extracts&exintro=1&explaintext=1&format=json&origin=*`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Wikivoyage API failed');
+
+        const data = await response.json();
+        const pages = data.query?.pages;
+
+        if (pages) {
+            const pageId = Object.keys(pages)[0];
+            if (pageId !== '-1' && pages[pageId].extract) {
+                let extract = pages[pageId].extract;
+                // Clean up and truncate the description
+                extract = extract.replace(/\n+/g, ' ').trim();
+                // Take first 2-3 sentences (up to ~300 chars)
+                const sentences = extract.match(/[^.!?]+[.!?]+/g) || [extract];
+                const description = sentences.slice(0, 3).join(' ').substring(0, 350);
+
+                // Cache the result
+                if (!apiCache.descriptions) apiCache.descriptions = {};
+                apiCache.descriptions[cacheKey] = description;
+                return description;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Wikivoyage error:', error);
+        return null;
+    }
+}
+
+// ============================================
 // ENHANCED DATA FETCHING
 // ============================================
 // Fetch all external data for a destination
 async function fetchDestinationData(dest, startDate, endDate, travelers) {
-    const countryData = COUNTRY_DATA[dest.country] || {};
+    // Look up country data - try by name first, then by code for GeoNames cities
+    let countryData = COUNTRY_DATA[dest.country] || {};
+    if (!countryData.currency && dest.countryCode) {
+        // For GeoNames cities, look up by ISO code in REGION_PRICING
+        const regionPricing = REGION_PRICING[dest.countryCode];
+        if (regionPricing) {
+            countryData = { currency: getCurrencyForCountry(dest.countryCode), iso2: dest.countryCode };
+        }
+    }
 
-    // Fetch data in parallel
-    const [weather, exchangeRate, advisory] = await Promise.all([
+    // Fetch data in parallel (including optional image and description)
+    const [weather, exchangeRate, advisory, image, wikiDescription] = await Promise.all([
         fetchWeatherOpenMeteo(dest.lat, dest.lon, startDate, endDate),
         countryData.currency ? fetchExchangeRate('USD', countryData.currency) : Promise.resolve(1),
-        countryData.iso2 ? fetchTravelAdvisory(countryData.iso2) : Promise.resolve(null)
+        countryData.iso2 || dest.countryCode ? fetchTravelAdvisory(countryData.iso2 || dest.countryCode) : Promise.resolve(null),
+        fetchWikipediaImage(dest.city, dest.country),
+        fetchWikivoyageDescription(dest.city)
     ]);
 
     // Try to get real flight prices if Amadeus is configured
@@ -487,7 +870,9 @@ async function fetchDestinationData(dest, startDate, endDate, travelers) {
         exchangeRate,
         localCurrency: countryData.currency || 'USD',
         advisory,
-        flightData
+        flightData,
+        image,
+        wikiDescription
     };
 }
 
@@ -949,6 +1334,251 @@ const DESTINATIONS = [
       accommodation: { budget: 30, mid: 80, luxury: 250 },
       activities: 30, food: 25, description: "Beaches & spirituality",
       seasonality: { winter: 0.9, spring: 1.0, summer: 1.3, fall: 1.1 } },
+
+    // Central America
+    { city: "San José", region: "Central Valley", country: "Costa Rica", lat: 9.93, lon: -84.08,
+      type: "fly", flightFromNYC: { low: 250, mid: 400, high: 650 },
+      accommodation: { budget: 40, mid: 90, luxury: 220 },
+      activities: 50, food: 35, description: "Gateway to rainforests, volcanoes, and some of the world's best biodiversity. Perfect base for eco-adventures.",
+      seasonality: { winter: 1.3, spring: 1.0, summer: 0.8, fall: 0.9 } },
+
+    { city: "Panama City", region: "Panama Province", country: "Panama", lat: 8.98, lon: -79.52,
+      type: "fly", flightFromNYC: { low: 220, mid: 380, high: 600 },
+      accommodation: { budget: 45, mid: 100, luxury: 250 },
+      activities: 45, food: 35, description: "Modern skyline meets historic Casco Viejo. Visit the famous canal, explore jungle islands, and enjoy duty-free shopping.",
+      seasonality: { winter: 1.2, spring: 1.0, summer: 0.85, fall: 0.9 } },
+
+    { city: "Guatemala City", region: "Guatemala", country: "Guatemala", lat: 14.63, lon: -90.51,
+      type: "fly", flightFromNYC: { low: 200, mid: 350, high: 550 },
+      accommodation: { budget: 30, mid: 65, luxury: 160 },
+      activities: 35, food: 25, description: "Ancient Mayan ruins, colonial Antigua nearby, stunning Lake Atitlán, and vibrant indigenous culture.",
+      seasonality: { winter: 1.2, spring: 1.0, summer: 0.85, fall: 0.95 } },
+
+    { city: "Belize City", region: "Belize", country: "Belize", lat: 17.5, lon: -88.2,
+      type: "fly", flightFromNYC: { low: 280, mid: 420, high: 650 },
+      accommodation: { budget: 50, mid: 120, luxury: 300 },
+      activities: 60, food: 40, description: "World's second-largest barrier reef, ancient Mayan temples, and lush jungle adventures. English-speaking Caribbean vibes.",
+      seasonality: { winter: 1.4, spring: 1.1, summer: 0.8, fall: 0.85 } },
+
+    // South America
+    { city: "Buenos Aires", region: "Buenos Aires", country: "Argentina", lat: -34.6, lon: -58.38,
+      type: "fly", flightFromNYC: { low: 500, mid: 800, high: 1300 },
+      accommodation: { budget: 35, mid: 80, luxury: 200 },
+      activities: 40, food: 45, description: "The Paris of South America. Tango, world-class steak, stunning architecture, and passionate football culture.",
+      seasonality: { winter: 0.8, spring: 1.0, summer: 0.85, fall: 1.1 } },
+
+    { city: "Rio de Janeiro", region: "Rio de Janeiro", country: "Brazil", lat: -22.91, lon: -43.17,
+      type: "fly", flightFromNYC: { low: 450, mid: 750, high: 1200 },
+      accommodation: { budget: 40, mid: 100, luxury: 280 },
+      activities: 50, food: 40, description: "Christ the Redeemer, Sugarloaf Mountain, Copacabana Beach, and samba rhythms. Pure Brazilian energy.",
+      seasonality: { winter: 0.85, spring: 1.0, summer: 0.9, fall: 1.4 } },
+
+    { city: "Lima", region: "Lima", country: "Peru", lat: -12.05, lon: -77.04,
+      type: "fly", flightFromNYC: { low: 350, mid: 550, high: 900 },
+      accommodation: { budget: 30, mid: 70, luxury: 180 },
+      activities: 35, food: 40, description: "Culinary capital of South America. Gateway to Machu Picchu with rich colonial history and stunning coastal views.",
+      seasonality: { winter: 0.9, spring: 1.0, summer: 1.0, fall: 1.2 } },
+
+    { city: "Cartagena", region: "Bolivar", country: "Colombia", lat: 10.39, lon: -75.51,
+      type: "fly", flightFromNYC: { low: 200, mid: 350, high: 550 },
+      accommodation: { budget: 35, mid: 85, luxury: 220 },
+      activities: 40, food: 35, description: "Colorful colonial walled city on the Caribbean. Beautiful beaches, vibrant nightlife, and rich history.",
+      seasonality: { winter: 1.3, spring: 1.1, summer: 0.9, fall: 0.95 } },
+
+    { city: "Bogotá", region: "Cundinamarca", country: "Colombia", lat: 4.71, lon: -74.07,
+      type: "fly", flightFromNYC: { low: 180, mid: 320, high: 500 },
+      accommodation: { budget: 30, mid: 70, luxury: 180 },
+      activities: 35, food: 30, description: "High-altitude capital with world-class museums, thriving food scene, street art, and amazing coffee culture.",
+      seasonality: { winter: 1.1, spring: 1.0, summer: 0.95, fall: 1.0 } },
+
+    { city: "Santiago", region: "Santiago Metropolitan", country: "Chile", lat: -33.45, lon: -70.67,
+      type: "fly", flightFromNYC: { low: 450, mid: 700, high: 1100 },
+      accommodation: { budget: 40, mid: 90, luxury: 220 },
+      activities: 45, food: 40, description: "Modern metropolis framed by the Andes. World-class wine country, ski resorts, and gateway to Patagonia.",
+      seasonality: { winter: 0.85, spring: 1.0, summer: 0.9, fall: 1.2 } },
+
+    { city: "Quito", region: "Pichincha", country: "Ecuador", lat: -0.18, lon: -78.47,
+      type: "fly", flightFromNYC: { low: 300, mid: 480, high: 750 },
+      accommodation: { budget: 30, mid: 65, luxury: 160 },
+      activities: 40, food: 25, description: "UNESCO World Heritage colonial center at 9,000 feet. Gateway to the Galápagos, Amazon, and the equator.",
+      seasonality: { winter: 1.0, spring: 1.0, summer: 1.0, fall: 1.0 } },
+
+    { city: "Medellín", region: "Antioquia", country: "Colombia", lat: 6.25, lon: -75.56,
+      type: "fly", flightFromNYC: { low: 200, mid: 340, high: 520 },
+      accommodation: { budget: 25, mid: 60, luxury: 150 },
+      activities: 35, food: 25, description: "City of eternal spring with perfect weather year-round. Innovative urban transformation and vibrant nightlife.",
+      seasonality: { winter: 1.2, spring: 1.0, summer: 0.9, fall: 1.0 } },
+
+    // Europe
+    { city: "London", region: "England", country: "UK", lat: 51.51, lon: -0.13,
+      type: "fly", flightFromNYC: { low: 350, mid: 550, high: 900 },
+      accommodation: { budget: 80, mid: 180, luxury: 450 },
+      activities: 60, food: 65, description: "Iconic landmarks, world-class museums (many free!), theater, royalty, and diverse neighborhoods to explore.",
+      seasonality: { winter: 0.85, spring: 1.0, summer: 1.3, fall: 1.0 } },
+
+    { city: "Paris", region: "Île-de-France", country: "France", lat: 48.86, lon: 2.35,
+      type: "fly", flightFromNYC: { low: 320, mid: 520, high: 850 },
+      accommodation: { budget: 70, mid: 160, luxury: 400 },
+      activities: 55, food: 60, description: "The City of Light. Art, cuisine, fashion, romance, and timeless architecture at every turn.",
+      seasonality: { winter: 0.9, spring: 1.1, summer: 1.3, fall: 1.0 } },
+
+    { city: "Barcelona", region: "Catalonia", country: "Spain", lat: 41.39, lon: 2.17,
+      type: "fly", flightFromNYC: { low: 300, mid: 500, high: 800 },
+      accommodation: { budget: 60, mid: 130, luxury: 320 },
+      activities: 50, food: 50, description: "Gaudí's masterpieces, Mediterranean beaches, tapas culture, and vibrant nightlife. Art and architecture paradise.",
+      seasonality: { winter: 0.8, spring: 1.0, summer: 1.4, fall: 1.1 } },
+
+    { city: "Rome", region: "Lazio", country: "Italy", lat: 41.9, lon: 12.5,
+      type: "fly", flightFromNYC: { low: 350, mid: 550, high: 900 },
+      accommodation: { budget: 65, mid: 140, luxury: 350 },
+      activities: 50, food: 55, description: "The Eternal City. Ancient ruins, Vatican treasures, incredible pasta, and 3,000 years of history.",
+      seasonality: { winter: 0.85, spring: 1.1, summer: 1.3, fall: 1.0 } },
+
+    { city: "Amsterdam", region: "North Holland", country: "Netherlands", lat: 52.37, lon: 4.9,
+      type: "fly", flightFromNYC: { low: 320, mid: 500, high: 800 },
+      accommodation: { budget: 70, mid: 150, luxury: 350 },
+      activities: 50, food: 55, description: "Canal-laced charm with world-class museums, cycling culture, liberal vibes, and beautiful Dutch architecture.",
+      seasonality: { winter: 0.8, spring: 1.2, summer: 1.3, fall: 0.95 } },
+
+    { city: "Lisbon", region: "Lisbon", country: "Portugal", lat: 38.72, lon: -9.14,
+      type: "fly", flightFromNYC: { low: 280, mid: 450, high: 700 },
+      accommodation: { budget: 50, mid: 110, luxury: 280 },
+      activities: 40, food: 45, description: "Hilly coastal capital with stunning views, historic trams, pastel buildings, and the world's best custard tarts.",
+      seasonality: { winter: 0.85, spring: 1.0, summer: 1.3, fall: 1.0 } },
+
+    { city: "Prague", region: "Bohemia", country: "Czech Republic", lat: 50.08, lon: 14.44,
+      type: "fly", flightFromNYC: { low: 350, mid: 550, high: 850 },
+      accommodation: { budget: 45, mid: 100, luxury: 250 },
+      activities: 40, food: 35, description: "Fairy-tale medieval architecture, legendary beer culture, Gothic charm, and incredible value for Europe.",
+      seasonality: { winter: 0.9, spring: 1.0, summer: 1.3, fall: 1.1 } },
+
+    { city: "Budapest", region: "Central Hungary", country: "Hungary", lat: 47.5, lon: 19.04,
+      type: "fly", flightFromNYC: { low: 380, mid: 580, high: 900 },
+      accommodation: { budget: 40, mid: 90, luxury: 220 },
+      activities: 40, food: 35, description: "Stunning Danube views, thermal baths, ruin bars, and grand architecture. One of Europe's best values.",
+      seasonality: { winter: 0.85, spring: 1.0, summer: 1.2, fall: 1.1 } },
+
+    { city: "Vienna", region: "Vienna", country: "Austria", lat: 48.21, lon: 16.37,
+      type: "fly", flightFromNYC: { low: 380, mid: 580, high: 920 },
+      accommodation: { budget: 55, mid: 130, luxury: 320 },
+      activities: 50, food: 50, description: "Imperial palaces, classical music heritage, coffee house culture, and world-class museums. Pure elegance.",
+      seasonality: { winter: 0.9, spring: 1.0, summer: 1.2, fall: 1.0 } },
+
+    { city: "Athens", region: "Attica", country: "Greece", lat: 37.98, lon: 23.73,
+      type: "fly", flightFromNYC: { low: 400, mid: 620, high: 950 },
+      accommodation: { budget: 50, mid: 110, luxury: 280 },
+      activities: 45, food: 40, description: "Birthplace of democracy and Western civilization. Ancient ruins, island-hopping gateway, and amazing Mediterranean food.",
+      seasonality: { winter: 0.75, spring: 1.0, summer: 1.4, fall: 1.1 } },
+
+    { city: "Dublin", region: "Leinster", country: "Ireland", lat: 53.35, lon: -6.26,
+      type: "fly", flightFromNYC: { low: 280, mid: 450, high: 700 },
+      accommodation: { budget: 65, mid: 150, luxury: 350 },
+      activities: 45, food: 50, description: "Literary heritage, legendary pubs, Georgian architecture, and friendly locals. Gateway to stunning Irish countryside.",
+      seasonality: { winter: 0.8, spring: 1.0, summer: 1.3, fall: 1.0 } },
+
+    { city: "Edinburgh", region: "Scotland", country: "UK", lat: 55.95, lon: -3.19,
+      type: "fly", flightFromNYC: { low: 350, mid: 550, high: 850 },
+      accommodation: { budget: 60, mid: 140, luxury: 340 },
+      activities: 45, food: 50, description: "Dramatic castle, medieval Old Town, world-class festivals, and gateway to the Scottish Highlands.",
+      seasonality: { winter: 0.75, spring: 1.0, summer: 1.4, fall: 1.1 } },
+
+    { city: "Berlin", region: "Berlin", country: "Germany", lat: 52.52, lon: 13.4,
+      type: "fly", flightFromNYC: { low: 350, mid: 550, high: 850 },
+      accommodation: { budget: 50, mid: 120, luxury: 300 },
+      activities: 45, food: 45, description: "History, art, nightlife, and creativity collide. Vibrant neighborhoods, world-class museums, and incredible street food.",
+      seasonality: { winter: 0.8, spring: 1.0, summer: 1.2, fall: 1.0 } },
+
+    { city: "Munich", region: "Bavaria", country: "Germany", lat: 48.14, lon: 11.58,
+      type: "fly", flightFromNYC: { low: 380, mid: 580, high: 900 },
+      accommodation: { budget: 60, mid: 140, luxury: 340 },
+      activities: 50, food: 50, description: "Bavarian charm, beer gardens, Oktoberfest, alpine day trips, and beautiful old town squares.",
+      seasonality: { winter: 0.85, spring: 1.0, summer: 1.2, fall: 1.4 } },
+
+    { city: "Copenhagen", region: "Capital Region", country: "Denmark", lat: 55.68, lon: 12.57,
+      type: "fly", flightFromNYC: { low: 380, mid: 600, high: 950 },
+      accommodation: { budget: 70, mid: 160, luxury: 400 },
+      activities: 55, food: 60, description: "Scandinavian design capital with world-class restaurants, fairy-tale harbor, cycling culture, and hygge lifestyle.",
+      seasonality: { winter: 0.75, spring: 1.0, summer: 1.4, fall: 1.0 } },
+
+    { city: "Stockholm", region: "Stockholm", country: "Sweden", lat: 59.33, lon: 18.07,
+      type: "fly", flightFromNYC: { low: 400, mid: 620, high: 980 },
+      accommodation: { budget: 70, mid: 160, luxury: 400 },
+      activities: 55, food: 60, description: "Built on 14 islands with stunning waterways, innovative design, historic old town, and Nordic beauty.",
+      seasonality: { winter: 0.7, spring: 1.0, summer: 1.5, fall: 1.0 } },
+
+    { city: "Reykjavik", region: "Capital Region", country: "Iceland", lat: 64.15, lon: -21.95,
+      type: "fly", flightFromNYC: { low: 280, mid: 450, high: 700 },
+      accommodation: { budget: 80, mid: 180, luxury: 400 },
+      activities: 100, food: 70, description: "Gateway to otherworldly landscapes. Northern lights, geysers, glaciers, and hot springs in Europe's most unique capital.",
+      seasonality: { winter: 1.0, spring: 1.1, summer: 1.5, fall: 1.2 } },
+
+    { city: "Istanbul", region: "Marmara", country: "Turkey", lat: 41.01, lon: 28.98,
+      type: "fly", flightFromNYC: { low: 450, mid: 700, high: 1100 },
+      accommodation: { budget: 40, mid: 90, luxury: 220 },
+      activities: 40, food: 35, description: "Where East meets West. Byzantine treasures, Ottoman grandeur, bustling bazaars, and incredible cuisine.",
+      seasonality: { winter: 0.8, spring: 1.1, summer: 1.3, fall: 1.1 } },
+
+    { city: "Marrakech", region: "Marrakech-Safi", country: "Morocco", lat: 31.63, lon: -8.0,
+      type: "fly", flightFromNYC: { low: 400, mid: 650, high: 1000 },
+      accommodation: { budget: 35, mid: 80, luxury: 250 },
+      activities: 40, food: 30, description: "Sensory overload in the best way. Souks, palaces, gardens, and the magical Jemaa el-Fnaa square.",
+      seasonality: { winter: 1.1, spring: 1.2, summer: 0.7, fall: 1.1 } },
+
+    // Australia & Oceania
+    { city: "Sydney", region: "New South Wales", country: "Australia", lat: -33.87, lon: 151.21,
+      type: "fly", flightFromNYC: { low: 800, mid: 1200, high: 2000 },
+      accommodation: { budget: 70, mid: 160, luxury: 400 },
+      activities: 60, food: 60, description: "Iconic harbor, stunning beaches, world-class dining, and laid-back Aussie lifestyle. A bucket-list destination.",
+      seasonality: { winter: 0.85, spring: 1.1, summer: 0.9, fall: 1.3 } },
+
+    { city: "Melbourne", region: "Victoria", country: "Australia", lat: -37.81, lon: 144.96,
+      type: "fly", flightFromNYC: { low: 800, mid: 1200, high: 2000 },
+      accommodation: { budget: 65, mid: 150, luxury: 380 },
+      activities: 55, food: 55, description: "Australia's cultural capital with street art, coffee culture, live music, and gateway to the Great Ocean Road.",
+      seasonality: { winter: 0.8, spring: 1.1, summer: 0.9, fall: 1.3 } },
+
+    { city: "Auckland", region: "Auckland", country: "New Zealand", lat: -36.85, lon: 174.76,
+      type: "fly", flightFromNYC: { low: 850, mid: 1300, high: 2200 },
+      accommodation: { budget: 60, mid: 140, luxury: 350 },
+      activities: 60, food: 55, description: "City of Sails surrounded by beaches, rainforests, and wine regions. Gateway to Middle-earth landscapes.",
+      seasonality: { winter: 0.8, spring: 1.1, summer: 0.9, fall: 1.3 } },
+
+    { city: "Fiji", region: "Viti Levu", country: "Fiji", lat: -17.77, lon: 177.97,
+      type: "fly", flightFromNYC: { low: 800, mid: 1200, high: 1800 },
+      accommodation: { budget: 70, mid: 180, luxury: 500 },
+      activities: 60, food: 50, description: "Tropical paradise with pristine beaches, crystal-clear waters, and some of the friendliest people on Earth.",
+      seasonality: { winter: 1.3, spring: 1.1, summer: 0.8, fall: 0.9 } },
+
+    // More Asia destinations
+    { city: "Singapore", region: "Singapore", country: "Singapore", lat: 1.35, lon: 103.82,
+      type: "fly", flightFromNYC: { low: 600, mid: 950, high: 1500 },
+      accommodation: { budget: 60, mid: 150, luxury: 400 },
+      activities: 55, food: 40, description: "Futuristic city-state with incredible food, Gardens by the Bay, and a perfect blend of cultures.",
+      seasonality: { winter: 1.1, spring: 1.0, summer: 1.0, fall: 1.0 } },
+
+    { city: "Ho Chi Minh City", region: "Southern Vietnam", country: "Vietnam", lat: 10.82, lon: 106.63,
+      type: "fly", flightFromNYC: { low: 550, mid: 850, high: 1300 },
+      accommodation: { budget: 25, mid: 60, luxury: 150 },
+      activities: 30, food: 20, description: "Buzzing energy, incredible street food, French colonial architecture, and gateway to the Mekong Delta.",
+      seasonality: { winter: 1.2, spring: 1.0, summer: 0.8, fall: 0.9 } },
+
+    { city: "Seoul", region: "Seoul", country: "South Korea", lat: 37.57, lon: 126.98,
+      type: "fly", flightFromNYC: { low: 550, mid: 850, high: 1350 },
+      accommodation: { budget: 45, mid: 100, luxury: 280 },
+      activities: 45, food: 40, description: "K-pop, ancient palaces, cutting-edge technology, and some of the world's best food. Tradition meets tomorrow.",
+      seasonality: { winter: 0.85, spring: 1.2, summer: 1.0, fall: 1.2 } },
+
+    { city: "Manila", region: "Metro Manila", country: "Philippines", lat: 14.6, lon: 120.98,
+      type: "fly", flightFromNYC: { low: 550, mid: 900, high: 1400 },
+      accommodation: { budget: 30, mid: 70, luxury: 180 },
+      activities: 35, food: 25, description: "Gateway to 7,000+ islands with stunning beaches, friendly locals, and incredible value for tropical paradise.",
+      seasonality: { winter: 1.3, spring: 1.1, summer: 0.8, fall: 0.9 } },
+
+    { city: "Kuala Lumpur", region: "Federal Territory", country: "Malaysia", lat: 3.14, lon: 101.69,
+      type: "fly", flightFromNYC: { low: 580, mid: 900, high: 1400 },
+      accommodation: { budget: 35, mid: 80, luxury: 200 },
+      activities: 40, food: 30, description: "Iconic Petronas Towers, incredible multicultural food scene, and gateway to stunning beaches and rainforests.",
+      seasonality: { winter: 1.1, spring: 1.0, summer: 0.95, fall: 1.0 } },
 ];
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -1535,10 +2165,47 @@ async function searchDestinations(searchInArea = false) {
         // Clear existing markers
         clearMarkers();
 
+        // Fetch dynamic cities from GeoNames based on map bounds or travel radius
+        let geonamesCities = [];
+        if (API_KEYS.geonames.username) {
+            let fetchBounds;
+            if (searchInArea && map.getBounds()) {
+                // Use current map bounds
+                const b = map.getBounds();
+                fetchBounds = {
+                    north: b.getNorth(),
+                    south: b.getSouth(),
+                    east: b.getEast(),
+                    west: b.getWest()
+                };
+            } else {
+                // Calculate bounds based on travel radius from home city
+                const maxDistance = maxHours > 0 ? maxHours * 500 : 4000; // Rough miles based on hours
+                const latOffset = maxDistance / 69; // ~69 miles per degree of latitude
+                const lonOffset = maxDistance / (69 * Math.cos(selectedHomeCity.lat * Math.PI / 180));
+                fetchBounds = {
+                    north: Math.min(85, selectedHomeCity.lat + latOffset),
+                    south: Math.max(-85, selectedHomeCity.lat - latOffset),
+                    east: Math.min(180, selectedHomeCity.lon + lonOffset),
+                    west: Math.max(-180, selectedHomeCity.lon - lonOffset)
+                };
+            }
+            geonamesCities = await fetchGeoNamesCities(fetchBounds, 100);
+        }
+
+        // Merge curated destinations with GeoNames cities
+        // Curated destinations take priority (don't duplicate)
+        const curatedCityNames = new Set(destinationsData.map(d => d.city.toLowerCase()));
+        const uniqueGeonamesCities = geonamesCities.filter(gc =>
+            !curatedCityNames.has(gc.city.toLowerCase())
+        );
+
+        const allDestinations = [...destinationsData, ...uniqueGeonamesCities];
+
         // Calculate costs for each destination
         const results = [];
 
-        for (const dest of destinationsData) {
+        for (const dest of allDestinations) {
             // Filter by travel mode
             if (travelMode === 'fly' && dest.type === 'drive') continue;
             if (travelMode === 'drive' && dest.type === 'fly') continue;
@@ -1890,14 +2557,31 @@ function createPopupContent(dest, travelers, nights) {
         </div>`;
     }
 
+    // Image header (if available from Wikipedia)
+    let imageHtml = '';
+    if (dest.image && dest.image.url) {
+        imageHtml = `
+            <div class="popup-image">
+                <img src="${dest.image.thumb}" alt="${dest.city}" loading="lazy">
+                <div class="popup-image-credit">
+                    📷 <a href="${dest.image.credit.link}" target="_blank" rel="noopener">${dest.image.credit.name}</a>
+                </div>
+            </div>
+        `;
+    }
+
+    // Use Wikivoyage description as fallback if no custom description
+    const description = dest.description || dest.wikiDescription || 'A beautiful destination worth exploring.';
+
     return `
         <div class="popup-content">
+            ${imageHtml}
             <div class="popup-header">${dest.city}</div>
             <div class="popup-subheader">${dest.region}, ${dest.country}</div>
 
             <div class="popup-section">
                 <h4>📍 About</h4>
-                <p style="font-size: 13px; color: #ccc; margin: 0;">${dest.description}</p>
+                <p style="font-size: 13px; color: #ccc; margin: 0;">${description}</p>
                 <div style="margin-top: 8px;">
                     <span class="weather-badge">${seasonLabel}</span>
                     <span class="weather-badge" style="margin-left: 4px;">⏱️ ${travelTimeStr}</span>
@@ -1973,16 +2657,20 @@ function updateAlternativesPanel(results, budgetMin, budgetMax) {
     list.innerHTML = inBudget.map(dest => {
         const weatherInfo = dest.weather ? `${dest.weather.conditions.split(' ')[0]} ${dest.weather.avgHigh}°F` : '';
         const advisoryColor = dest.advisory ? dest.advisory.color : '#888';
+        // Show thumbnail if available, otherwise show travel mode icon
+        const imageHtml = dest.image && dest.image.thumb
+            ? `<div class="alternative-thumb"><img src="${dest.image.thumb}" alt="${dest.city}" loading="lazy"></div>`
+            : `<div class="alternative-icon">${dest.type === 'drive' ? '🚗' : '✈️'}</div>`;
         return `
             <div class="alternative-item" onclick="focusDestination(${dest.lat}, ${dest.lon})">
-                <div class="alternative-icon">${dest.type === 'drive' ? '🚗' : '✈️'}</div>
+                ${imageHtml}
                 <div class="alternative-info">
                     <div class="alternative-name">
                         ${dest.city}, ${dest.country}
                         ${dest.advisory ? `<span style="color: ${advisoryColor}; font-size: 10px;">●</span>` : ''}
                     </div>
                     <div class="alternative-details">
-                        ${weatherInfo ? `${weatherInfo} · ` : ''}${formatTravelTime(dest.travelTime)}
+                        ${dest.type === 'drive' ? '🚗' : '✈️'} ${weatherInfo ? `${weatherInfo} · ` : ''}${formatTravelTime(dest.travelTime)}
                     </div>
                 </div>
                 <div class="alternative-price">$${dest.costs.total}</div>
