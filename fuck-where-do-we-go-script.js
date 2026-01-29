@@ -20,7 +20,9 @@ const apiCache = {
     weather: {},
     currency: {},
     advisories: {},
-    flights: {}
+    flights: {},
+    driving: {},
+    geonames: {}
 };
 
 // ============================================
@@ -43,8 +45,8 @@ const API_KEYS = {
     geonames: {
         username: 'dnfisher'
     },
-    // Optional: OpenRouteService for isochrones: https://openrouteservice.org
-    openRouteService: ''   // Free key, 2000 calls/day
+    // Optional: OpenRouteService for driving routes: https://openrouteservice.org
+    openRouteService: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjA4ZGYyZTM0NWUwODRjMmE5Yjg0NThkOTdkMTcxOGE5IiwiaCI6Im11cm11cjY0In0='   // Free key, 2000 calls/day
 };
 
 // Country data for currency and safety lookups
@@ -578,6 +580,58 @@ async function fetchWikipediaImage(cityName, countryName) {
         return null;
     } catch (error) {
         console.error('Wikipedia image error:', error);
+        return null;
+    }
+}
+
+// ============================================
+// OPENROUTESERVICE API - Driving Directions
+// Get accurate driving times and distances
+// ============================================
+async function fetchDrivingRoute(homeLat, homeLon, destLat, destLon) {
+    if (!API_KEYS.openRouteService) {
+        return null;
+    }
+
+    const cacheKey = `${homeLat.toFixed(2)},${homeLon.toFixed(2)}-${destLat.toFixed(2)},${destLon.toFixed(2)}`;
+    if (apiCache.driving[cacheKey]) {
+        return apiCache.driving[cacheKey];
+    }
+
+    try {
+        const url = `https://api.openrouteservice.org/v2/directions/driving-car?start=${homeLon},${homeLat}&end=${destLon},${destLat}`;
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': API_KEYS.openRouteService
+            }
+        });
+
+        if (!response.ok) {
+            // If route not found (e.g., water crossing), return null
+            if (response.status === 404) {
+                apiCache.driving[cacheKey] = { notDrivable: true };
+                return { notDrivable: true };
+            }
+            throw new Error('OpenRouteService API failed');
+        }
+
+        const data = await response.json();
+
+        if (data.features && data.features[0]) {
+            const segment = data.features[0].properties.segments[0];
+            const result = {
+                durationHours: segment.duration / 3600, // Convert seconds to hours
+                distanceMiles: segment.distance / 1609.34, // Convert meters to miles
+                notDrivable: false
+            };
+            apiCache.driving[cacheKey] = result;
+            return result;
+        }
+
+        return null;
+    } catch (error) {
+        console.error('OpenRouteService error:', error);
         return null;
     }
 }
@@ -1740,6 +1794,73 @@ const DESTINATIONS = [
       accommodation: { budget: 35, mid: 80, luxury: 200 },
       activities: 40, food: 30, description: "Iconic Petronas Towers, incredible multicultural food scene, and gateway to stunning beaches and rainforests.",
       seasonality: { winter: 1.1, spring: 1.0, summer: 0.95, fall: 1.0 } },
+
+    // Additional Asian Destinations
+    { city: "Seoul", region: "Capital Area", country: "South Korea", lat: 37.57, lon: 126.98,
+      type: "fly", flightFromNYC: { low: 650, mid: 1000, high: 1600 },
+      accommodation: { budget: 45, mid: 100, luxury: 280 },
+      activities: 45, food: 40, description: "K-pop, incredible street food, ancient palaces, and cutting-edge technology blend seamlessly in this dynamic capital.",
+      seasonality: { winter: 0.85, spring: 1.3, summer: 1.0, fall: 1.3 } },
+
+    { city: "Kyoto", region: "Kansai", country: "Japan", lat: 35.01, lon: 135.77,
+      type: "fly", flightFromNYC: { low: 620, mid: 980, high: 1550 },
+      accommodation: { budget: 55, mid: 130, luxury: 400 },
+      activities: 50, food: 45, description: "Ancient temples, traditional geisha districts, stunning bamboo groves, and Japan's cultural heart.",
+      seasonality: { winter: 0.85, spring: 1.5, summer: 1.0, fall: 1.4 } },
+
+    { city: "Osaka", region: "Kansai", country: "Japan", lat: 34.69, lon: 135.50,
+      type: "fly", flightFromNYC: { low: 600, mid: 950, high: 1500 },
+      accommodation: { budget: 45, mid: 110, luxury: 300 },
+      activities: 45, food: 50, description: "Japan's kitchen with incredible street food, vibrant nightlife, and easy access to Kyoto and Nara.",
+      seasonality: { winter: 0.9, spring: 1.4, summer: 1.0, fall: 1.2 } },
+
+    { city: "Hong Kong", region: "Hong Kong", country: "Hong Kong", lat: 22.32, lon: 114.17,
+      type: "fly", flightFromNYC: { low: 550, mid: 850, high: 1400 },
+      accommodation: { budget: 60, mid: 150, luxury: 400 },
+      activities: 50, food: 45, description: "Stunning skyline, dim sum paradise, hiking trails with harbor views, and vibrant night markets.",
+      seasonality: { winter: 1.0, spring: 1.1, summer: 0.85, fall: 1.2 } },
+
+    { city: "Taipei", region: "Northern Taiwan", country: "Taiwan", lat: 25.03, lon: 121.57,
+      type: "fly", flightFromNYC: { low: 550, mid: 850, high: 1350 },
+      accommodation: { budget: 40, mid: 90, luxury: 250 },
+      activities: 40, food: 35, description: "Night markets, bubble tea origins, stunning temples, and easy access to beautiful mountain scenery.",
+      seasonality: { winter: 0.9, spring: 1.1, summer: 0.85, fall: 1.1 } },
+
+    { city: "Hanoi", region: "Northern Vietnam", country: "Vietnam", lat: 21.03, lon: 105.85,
+      type: "fly", flightFromNYC: { low: 500, mid: 800, high: 1300 },
+      accommodation: { budget: 20, mid: 50, luxury: 150 },
+      activities: 25, food: 15, description: "Charming Old Quarter, legendary pho, French colonial architecture, and gateway to Ha Long Bay.",
+      seasonality: { winter: 1.0, spring: 1.2, summer: 0.8, fall: 1.1 } },
+
+    { city: "Chiang Mai", region: "Northern Thailand", country: "Thailand", lat: 18.79, lon: 98.98,
+      type: "fly", flightFromNYC: { low: 580, mid: 900, high: 1400 },
+      accommodation: { budget: 20, mid: 50, luxury: 150 },
+      activities: 30, food: 15, description: "Ancient temples, elephant sanctuaries, incredible food scene, and laid-back mountain vibes.",
+      seasonality: { winter: 1.4, spring: 1.0, summer: 0.75, fall: 0.9 } },
+
+    { city: "Phuket", region: "Southern Thailand", country: "Thailand", lat: 7.89, lon: 98.40,
+      type: "fly", flightFromNYC: { low: 600, mid: 950, high: 1450 },
+      accommodation: { budget: 30, mid: 80, luxury: 250 },
+      activities: 40, food: 25, description: "Thailand's largest island with stunning beaches, vibrant nightlife, and world-class diving.",
+      seasonality: { winter: 1.5, spring: 1.1, summer: 0.7, fall: 0.8 } },
+
+    { city: "Siem Reap", region: "Siem Reap", country: "Cambodia", lat: 13.36, lon: 103.86,
+      type: "fly", flightFromNYC: { low: 550, mid: 900, high: 1400 },
+      accommodation: { budget: 15, mid: 45, luxury: 180 },
+      activities: 35, food: 15, description: "Gateway to magnificent Angkor Wat, charming pub street, and authentic Khmer culture.",
+      seasonality: { winter: 1.4, spring: 1.0, summer: 0.7, fall: 0.8 } },
+
+    { city: "Mumbai", region: "Maharashtra", country: "India", lat: 19.08, lon: 72.88,
+      type: "fly", flightFromNYC: { low: 500, mid: 800, high: 1300 },
+      accommodation: { budget: 25, mid: 70, luxury: 200 },
+      activities: 30, food: 20, description: "Bollywood, incredible street food, colonial architecture, and India's most cosmopolitan city.",
+      seasonality: { winter: 1.3, spring: 1.0, summer: 0.6, fall: 0.9 } },
+
+    { city: "Goa", region: "Goa", country: "India", lat: 15.30, lon: 74.12,
+      type: "fly", flightFromNYC: { low: 550, mid: 850, high: 1350 },
+      accommodation: { budget: 20, mid: 60, luxury: 200 },
+      activities: 25, food: 20, description: "Beautiful beaches, Portuguese heritage, legendary parties, and laid-back tropical vibes.",
+      seasonality: { winter: 1.5, spring: 1.0, summer: 0.5, fall: 0.8 } },
 ];
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -2086,6 +2207,46 @@ function updateTravelTimeInfo() {
     }
 }
 
+// Check if driving is possible between two locations (no major water crossings)
+function isDrivingPossible(homeCountry, destCountry, homeLat, homeLon, destLat, destLon) {
+    // Island nations that cannot be driven to/from
+    const islandNations = ['Ireland', 'UK', 'United Kingdom', 'Great Britain', 'Japan', 'Philippines',
+                           'Indonesia', 'Australia', 'New Zealand', 'Taiwan', 'Singapore', 'Hong Kong',
+                           'Iceland', 'Cuba', 'Jamaica', 'Puerto Rico', 'Dominican Republic', 'Bahamas',
+                           'Hawaii', 'Sri Lanka', 'Madagascar', 'Maldives', 'Fiji', 'Malta', 'Cyprus'];
+
+    // Check if either location is an island nation
+    const homeIsIsland = islandNations.some(island =>
+        homeCountry?.toLowerCase().includes(island.toLowerCase()));
+    const destIsIsland = islandNations.some(island =>
+        destCountry?.toLowerCase().includes(island.toLowerCase()));
+
+    // If both are on the same island nation, driving might be possible
+    if (homeIsIsland && destIsIsland && homeCountry === destCountry) {
+        return true;
+    }
+
+    // If one is an island and the other isn't, no driving
+    if (homeIsIsland !== destIsIsland) {
+        return false;
+    }
+
+    // Both are islands but different countries (e.g., UK to Ireland) - no driving
+    if (homeIsIsland && destIsIsland && homeCountry !== destCountry) {
+        return false;
+    }
+
+    // Check for continental water crossings (simplified)
+    // Americas to Europe/Asia/Africa - no driving
+    const homeInAmericas = homeLon < -30;
+    const destInAmericas = destLon < -30;
+    if (homeInAmericas !== destInAmericas) {
+        return false;
+    }
+
+    return true;
+}
+
 // Calculate travel time to destination
 function calculateTravelTime(homeCity, dest, distance) {
     if (dest.type === 'drive') {
@@ -2279,32 +2440,32 @@ function autoZoomToTravelRadius(hours) {
     }).addTo(map);
     homeMarker.bindPopup(`<b>Your location</b><br>${selectedHomeCity.city}, ${selectedHomeCity.state || selectedHomeCity.country}`);
 
-    // Create travel radius visualization
+    // Create travel radius visualization based on selected travel mode
     const layers = [];
 
     if (hours > 0) {
-        // Flight radius (larger, dashed cyan)
-        if (flyRadius > 0 && flyRadius !== driveRadius) {
+        // Flight radius - only show for 'fly' or 'both' modes
+        if ((travelMode === 'fly' || travelMode === 'both') && flyRadius > 0) {
             const flyRadiusMeters = flyRadius * 1609.34;
             layers.push(L.circle([selectedHomeCity.lat, selectedHomeCity.lon], {
                 radius: flyRadiusMeters,
                 color: '#00d4ff',
                 fillColor: '#00d4ff',
                 fillOpacity: 0.05,
-                weight: 2,
-                dashArray: '10, 10'
+                weight: 3,
+                dashArray: '15, 10'
             }));
         }
 
-        // Drive radius (smaller, solid orange)
-        if (driveRadius > 0) {
+        // Drive radius - only show for 'drive' or 'both' modes
+        if ((travelMode === 'drive' || travelMode === 'both') && driveRadius > 0) {
             const driveRadiusMeters = driveRadius * 1609.34;
             layers.push(L.circle([selectedHomeCity.lat, selectedHomeCity.lon], {
                 radius: driveRadiusMeters,
                 color: '#FF9800',
                 fillColor: '#FF9800',
-                fillOpacity: 0.1,
-                weight: 2
+                fillOpacity: 0.12,
+                weight: 3
             }));
         }
 
@@ -2333,8 +2494,13 @@ function setTravelMode(mode) {
         btn.classList.toggle('active', btn.dataset.mode === mode);
     });
 
-    // Auto-search when travel mode changes (if home city is selected)
+    // Update radius visualization when travel mode changes
     if (selectedHomeCity) {
+        const hours = parseInt(document.getElementById('maxTravelTime').value) || 0;
+        if (hours > 0) {
+            autoZoomToTravelRadius(hours);
+        }
+        // Auto-search when travel mode changes
         searchDestinations();
     }
 }
@@ -2484,9 +2650,22 @@ async function searchDestinations(searchInArea = false) {
                 dest.lat, dest.lon
             );
 
-            // Dynamically determine travel type based on distance from THIS user's home
-            // (overrides the static type which was based on NYC)
-            const effectiveType = distance <= DRIVE_THRESHOLD ? 'drive' : 'fly';
+            // Check if driving is actually possible (no major water crossings)
+            const canDrive = isDrivingPossible(
+                selectedHomeCity.country,
+                dest.country,
+                selectedHomeCity.lat, selectedHomeCity.lon,
+                dest.lat, dest.lon
+            );
+
+            // Dynamically determine travel type based on distance and drivability
+            // If water crossing required, must fly regardless of distance
+            let effectiveType;
+            if (!canDrive) {
+                effectiveType = 'fly';
+            } else {
+                effectiveType = distance <= DRIVE_THRESHOLD ? 'drive' : 'fly';
+            }
 
             // Filter by travel mode preference
             if (travelMode === 'fly' && effectiveType === 'drive') {
@@ -2568,13 +2747,53 @@ async function searchDestinations(searchInArea = false) {
         const enrichedResults = await Promise.all(
             topResults.map(async (dest) => {
                 const externalData = await fetchDestinationData(dest, startDateStr, endDateStr, travelers);
+
+                // For driving destinations, get accurate route from OpenRouteService
+                let accurateDriving = null;
+                if (dest.type === 'drive' && API_KEYS.openRouteService) {
+                    accurateDriving = await fetchDrivingRoute(
+                        selectedHomeCity.lat, selectedHomeCity.lon,
+                        dest.lat, dest.lon
+                    );
+                }
+
+                // Update travel time and costs if we got accurate driving data
+                if (accurateDriving && !accurateDriving.notDrivable) {
+                    const accurateTime = accurateDriving.durationHours;
+                    const accurateDistance = accurateDriving.distanceMiles;
+
+                    // Recalculate transport cost with accurate distance
+                    const drivingCost = accurateDistance * 2 * 0.25; // Round trip, $0.25/mile
+                    const costDiff = drivingCost - dest.costs.transport;
+
+                    return {
+                        ...dest,
+                        ...externalData,
+                        travelTime: accurateTime,
+                        distance: accurateDistance,
+                        accurateDriving: true,
+                        costs: {
+                            ...dest.costs,
+                            transport: Math.round(drivingCost),
+                            total: Math.round(dest.costs.total + costDiff),
+                            perDay: Math.round((dest.costs.total + costDiff) / nights)
+                        }
+                    };
+                } else if (accurateDriving && accurateDriving.notDrivable) {
+                    // Route not possible - should be filtered out but mark it
+                    return { ...dest, ...externalData, notDrivable: true };
+                }
+
                 return { ...dest, ...externalData };
             })
         );
 
+        // Filter out any destinations that turned out to be not drivable
+        const validEnrichedResults = enrichedResults.filter(r => !r.notDrivable);
+
         // Combine enriched results with remaining results
         const allResults = [
-            ...enrichedResults,
+            ...validEnrichedResults,
             ...results.slice(15)
         ];
 
@@ -2673,8 +2892,8 @@ function calculateTripCost(dest, options) {
     // Food cost (per person per day)
     const foodCost = dest.food * travelers * nights * seasonMultiplier;
 
-    // Activities cost (per person, spread across trip)
-    const activitiesCost = dest.activities * travelers;
+    // Activities cost (per person per day)
+    const activitiesCost = dest.activities * travelers * nights;
 
     // Total cost
     const total = transportCost + accommodationCost + foodCost + activitiesCost;
