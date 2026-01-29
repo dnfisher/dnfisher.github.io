@@ -694,6 +694,67 @@
             color: #f0c674;
         }
 
+        .popup-tag.clickable {
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .popup-tag.clickable:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Security Level Modal */
+        .security-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .security-modal-content {
+            background: #2d2d2d;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid #404040;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .security-modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #404040;
+            border: none;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .security-modal-close:hover {
+            background: #00d4ff;
+            color: #1a1a1a;
+        }
+
         /* Two column grid for costs */
         .popup-grid {
             display: grid;
@@ -766,6 +827,96 @@
             text-align: right;
             font-size: 12px;
             color: #aaa;
+        }
+
+        /* Enhanced weather display */
+        .popup-weather-enhanced {
+            background: #363636;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .popup-weather-current {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #404040;
+            margin-bottom: 12px;
+        }
+
+        .weather-current-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .weather-current-icon {
+            font-size: 32px;
+        }
+
+        .weather-current-temp {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .weather-current-right {
+            flex: 1;
+        }
+
+        .weather-current-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .weather-current-desc {
+            font-size: 13px;
+            color: #ddd;
+        }
+
+        .popup-weather-forecast {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .forecast-day {
+            flex: 1;
+            text-align: center;
+            padding: 4px 2px;
+        }
+
+        .forecast-day-name {
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .forecast-day-icon {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .forecast-day-temps {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .forecast-high {
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .forecast-low {
+            font-size: 11px;
+            color: #888;
         }
 
         /* Travel info row */
@@ -1152,13 +1303,13 @@
                     <div class="stepper-control">
                         <button type="button" class="stepper-btn" onclick="adjustTravelTime(-1)">−</button>
                         <div class="stepper-value">
-                            <span id="travelTimeDisplay">Any</span>
-                            <input type="hidden" id="maxTravelTime" value="0">
+                            <span id="travelTimeDisplay">3 hrs</span>
+                            <input type="hidden" id="maxTravelTime" value="3">
                         </div>
                         <button type="button" class="stepper-btn" onclick="adjustTravelTime(1)">+</button>
                     </div>
                     <div class="info-box travel-time-info">
-                        <span id="travelTimeInfo">🚗 ~480 mi drive or ✈️ ~2,400 mi flight</span>
+                        <span id="travelTimeInfo">🚗 ~150 mi drive or ✈️ ~500 mi flight</span>
                     </div>
                 </div>
             </div>
