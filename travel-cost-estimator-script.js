@@ -74,6 +74,16 @@ async function fetchWeatherOpenMeteo(lat, lon, startDate, endDate) {
         return apiCache.weather[cacheKey];
     }
 
+    // Check if the trip is within forecast range (16 days)
+    const today = new Date();
+    const tripStart = new Date(startDate);
+    const daysUntilTrip = Math.floor((tripStart - today) / (1000 * 60 * 60 * 24));
+
+    // If trip is beyond 16 days, use climate/almanac data instead
+    if (daysUntilTrip > 16) {
+        return await fetchClimateData(lat, lon, tripStart.getMonth());
+    }
+
     try {
         // Get forecast for next 16 days
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&temperature_unit=fahrenheit&timezone=auto&forecast_days=16`;
@@ -85,6 +95,7 @@ async function fetchWeatherOpenMeteo(lat, lon, startDate, endDate) {
 
         // Process weather data
         const weather = {
+            type: 'forecast',
             forecast: data.daily,
             avgHigh: Math.round(data.daily.temperature_2m_max.reduce((a, b) => a + b, 0) / data.daily.temperature_2m_max.length),
             avgLow: Math.round(data.daily.temperature_2m_min.reduce((a, b) => a + b, 0) / data.daily.temperature_2m_min.length),
@@ -96,8 +107,139 @@ async function fetchWeatherOpenMeteo(lat, lon, startDate, endDate) {
         return weather;
     } catch (error) {
         console.error('Open-Meteo error:', error);
+        // Fall back to climate data if forecast fails
+        return await fetchClimateData(lat, lon, tripStart.getMonth());
+    }
+}
+
+// Fetch historical climate data (almanac) for a specific month
+async function fetchClimateData(lat, lon, month) {
+    const cacheKey = `climate-${lat.toFixed(2)},${lon.toFixed(2)},${month}`;
+    if (apiCache.weather[cacheKey]) {
+        return apiCache.weather[cacheKey];
+    }
+
+    try {
+        // Get historical data for the last 5 years for this month
+        const currentYear = new Date().getFullYear();
+        const years = [currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4, currentYear - 5];
+
+        // Build date ranges for the target month across multiple years
+        const monthStr = String(month + 1).padStart(2, '0');
+        const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
+
+        let allHighs = [];
+        let allLows = [];
+        let allPrecip = [];
+
+        // Fetch data for each year (we'll do this sequentially to avoid rate limits)
+        for (const year of years.slice(0, 3)) { // Limit to 3 years to reduce API calls
+            const startDate = `${year}-${monthStr}-01`;
+            const endDate = `${year}-${monthStr}-${String(daysInMonth).padStart(2, '0')}`;
+
+            const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&temperature_unit=fahrenheit&timezone=auto`;
+
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.daily) {
+                    allHighs.push(...data.daily.temperature_2m_max.filter(t => t !== null));
+                    allLows.push(...data.daily.temperature_2m_min.filter(t => t !== null));
+                    // Convert precipitation to rain chance estimate (days with > 0.1mm)
+                    const rainyDays = data.daily.precipitation_sum.filter(p => p > 0.1).length;
+                    allPrecip.push(rainyDays / data.daily.precipitation_sum.length * 100);
+                }
+            }
+        }
+
+        if (allHighs.length === 0) {
+            // If API fails, return null to trigger fallback
+            return null;
+        }
+
+        // Calculate averages
+        const avgHigh = Math.round(allHighs.reduce((a, b) => a + b, 0) / allHighs.length);
+        const avgLow = Math.round(allLows.reduce((a, b) => a + b, 0) / allLows.length);
+        const rainChance = Math.round(allPrecip.reduce((a, b) => a + b, 0) / allPrecip.length);
+
+        // Determine typical conditions based on temperature and precipitation
+        const conditions = getTypicalConditions(avgHigh, avgLow, rainChance, lat);
+
+        const climate = {
+            type: 'climate',
+            monthName: getMonthName(month),
+            avgHigh,
+            avgLow,
+            rainChance,
+            conditions,
+            description: getClimateDescription(avgHigh, avgLow, rainChance)
+        };
+
+        apiCache.weather[cacheKey] = climate;
+        return climate;
+    } catch (error) {
+        console.error('Climate data error:', error);
         return null;
     }
+}
+
+// Get month name
+function getMonthName(month) {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[month];
+}
+
+// Determine typical weather conditions based on climate data
+function getTypicalConditions(avgHigh, avgLow, rainChance, lat) {
+    // Determine if it's likely snowy (cold + precipitation + not tropical)
+    const isCold = avgHigh < 40;
+    const isCool = avgHigh < 60;
+    const isWarm = avgHigh >= 70 && avgHigh < 85;
+    const isHot = avgHigh >= 85;
+    const isRainy = rainChance > 40;
+    const isTropical = Math.abs(lat) < 25;
+
+    if (isCold && rainChance > 30 && !isTropical) {
+        return '❄️ Cold & Snowy';
+    } else if (isCold && rainChance <= 30) {
+        return '🥶 Cold & Dry';
+    } else if (isCold) {
+        return '🌨️ Cold';
+    } else if (isCool && isRainy) {
+        return '🌧️ Cool & Rainy';
+    } else if (isCool) {
+        return '🌤️ Cool & Mild';
+    } else if (isWarm && isRainy && isTropical) {
+        return '🌴 Warm & Humid';
+    } else if (isWarm && isRainy) {
+        return '🌦️ Warm & Rainy';
+    } else if (isWarm) {
+        return '☀️ Warm & Pleasant';
+    } else if (isHot && isRainy) {
+        return '🌴 Hot & Humid';
+    } else if (isHot) {
+        return '🔥 Hot & Sunny';
+    }
+    return '🌤️ Mild';
+}
+
+// Get a descriptive text for the climate
+function getClimateDescription(avgHigh, avgLow, rainChance) {
+    let desc = '';
+
+    if (avgHigh < 32) desc = 'Expect freezing temperatures';
+    else if (avgHigh < 50) desc = 'Pack warm layers';
+    else if (avgHigh < 65) desc = 'Mild weather, light jacket recommended';
+    else if (avgHigh < 80) desc = 'Pleasant temperatures';
+    else if (avgHigh < 90) desc = 'Warm weather';
+    else desc = 'Hot temperatures, stay hydrated';
+
+    if (rainChance > 50) desc += ', frequent rain likely';
+    else if (rainChance > 30) desc += ', some rain possible';
+    else desc += ', mostly dry';
+
+    return desc;
 }
 
 // Convert WMO weather codes to descriptions
@@ -806,39 +948,6 @@ const DESTINATIONS = [
       activities: 30, food: 25, description: "Beaches & spirituality",
       seasonality: { winter: 0.9, spring: 1.0, summer: 1.3, fall: 1.1 } },
 ];
-
-// Major US cities for home city selection
-const HOME_CITIES = [
-    { city: "New York", state: "NY", lat: 40.71, lon: -74.01 },
-    { city: "Los Angeles", state: "CA", lat: 34.05, lon: -118.24 },
-    { city: "Chicago", state: "IL", lat: 41.88, lon: -87.63 },
-    { city: "Houston", state: "TX", lat: 29.76, lon: -95.37 },
-    { city: "Phoenix", state: "AZ", lat: 33.45, lon: -112.07 },
-    { city: "Philadelphia", state: "PA", lat: 39.95, lon: -75.17 },
-    { city: "San Antonio", state: "TX", lat: 29.42, lon: -98.49 },
-    { city: "San Diego", state: "CA", lat: 32.72, lon: -117.16 },
-    { city: "Dallas", state: "TX", lat: 32.78, lon: -96.8 },
-    { city: "San Jose", state: "CA", lat: 37.34, lon: -121.89 },
-    { city: "Austin", state: "TX", lat: 30.27, lon: -97.74 },
-    { city: "Jacksonville", state: "FL", lat: 30.33, lon: -81.66 },
-    { city: "Fort Worth", state: "TX", lat: 32.76, lon: -97.33 },
-    { city: "Columbus", state: "OH", lat: 39.96, lon: -83.0 },
-    { city: "Charlotte", state: "NC", lat: 35.23, lon: -80.84 },
-    { city: "San Francisco", state: "CA", lat: 37.77, lon: -122.42 },
-    { city: "Indianapolis", state: "IN", lat: 39.77, lon: -86.16 },
-    { city: "Seattle", state: "WA", lat: 47.61, lon: -122.33 },
-    { city: "Denver", state: "CO", lat: 39.74, lon: -104.99 },
-    { city: "Washington", state: "DC", lat: 38.9, lon: -77.04 },
-    { city: "Boston", state: "MA", lat: 42.36, lon: -71.06 },
-    { city: "Nashville", state: "TN", lat: 36.16, lon: -86.78 },
-    { city: "Detroit", state: "MI", lat: 42.33, lon: -83.05 },
-    { city: "Portland", state: "OR", lat: 45.52, lon: -122.68 },
-    { city: "Las Vegas", state: "NV", lat: 36.17, lon: -115.14 },
-    { city: "Atlanta", state: "GA", lat: 33.75, lon: -84.39 },
-    { city: "Miami", state: "FL", lat: 25.76, lon: -80.19 },
-    { city: "Minneapolis", state: "MN", lat: 44.98, lon: -93.27 },
-];
-
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
@@ -846,9 +955,64 @@ document.addEventListener('DOMContentLoaded', () => {
     initAutocomplete();
     initMonthSelector();
     initTravelTimeSelector();
+    initSearchTriggers();
     updateApiStatus();
     destinationsData = DESTINATIONS;
 });
+
+// Track if user has made changes since last search
+let searchParamsChanged = false;
+
+// Initialize event listeners to trigger search on input changes
+function initSearchTriggers() {
+    // All input elements that should trigger search update
+    const searchInputs = [
+        'travelers',
+        'tripDuration',
+        'startDate',
+        'endDate',
+        'accommodationType',
+        'budgetMin',
+        'budgetMax',
+        'maxTravelTime'
+    ];
+
+    // Debounced auto-search function
+    const debouncedSearch = debounce(() => {
+        if (selectedHomeCity && hasSearched) {
+            searchDestinations();
+        }
+    }, 800);
+
+    // Add change listeners to all inputs
+    searchInputs.forEach(inputId => {
+        const element = document.getElementById(inputId);
+        if (element) {
+            // For select elements, use 'change' event
+            const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
+
+            element.addEventListener(eventType, () => {
+                if (hasSearched) {
+                    searchParamsChanged = true;
+                    showSearchAreaButton();
+                    // Auto-search after debounce
+                    debouncedSearch();
+                }
+            });
+        }
+    });
+
+    // Travel mode buttons
+    document.querySelectorAll('.travel-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (hasSearched) {
+                searchParamsChanged = true;
+                showSearchAreaButton();
+                debouncedSearch();
+            }
+        });
+    });
+}
 
 // Initialize Leaflet map
 function initMap() {
@@ -881,9 +1045,16 @@ function onMapMoved() {
     }
 }
 
-// Show the "Search this area" button
-function showSearchAreaButton() {
+// Show the "Search this area" / "Update search" button
+function showSearchAreaButton(text = null) {
     const btn = document.getElementById('searchAreaBtn');
+    if (text) {
+        btn.textContent = text;
+    } else if (searchParamsChanged) {
+        btn.textContent = '🔄 Update search';
+    } else {
+        btn.textContent = '🔄 Search this area';
+    }
     btn.classList.add('show');
 }
 
@@ -891,6 +1062,7 @@ function showSearchAreaButton() {
 function hideSearchAreaButton() {
     const btn = document.getElementById('searchAreaBtn');
     btn.classList.remove('show');
+    searchParamsChanged = false;
 }
 
 // Search in current map area
@@ -1016,40 +1188,93 @@ function calculateTravelTime(homeCity, dest, distance) {
     }
 }
 
-// Initialize autocomplete for home city
+// Debounce helper function
+let debounceTimer = null;
+function debounce(func, delay) {
+    return function(...args) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+// Initialize autocomplete for home city using Nominatim (OpenStreetMap)
 function initAutocomplete() {
     const input = document.getElementById('homeCity');
     const results = document.getElementById('homeCityResults');
 
-    input.addEventListener('input', () => {
-        const query = input.value.toLowerCase().trim();
+    // Debounced search function (Nominatim requires max 1 req/sec)
+    const searchCities = debounce(async (query) => {
         if (query.length < 2) {
             results.classList.remove('show');
             return;
         }
 
-        const matches = HOME_CITIES.filter(c =>
-            c.city.toLowerCase().includes(query) ||
-            c.state.toLowerCase().includes(query)
-        ).slice(0, 8);
+        try {
+            // Show loading state
+            results.innerHTML = '<div class="autocomplete-item" style="color: #888;">Searching...</div>';
+            results.classList.add('show');
 
-        if (matches.length === 0) {
-            results.classList.remove('show');
-            return;
+            // Use Nominatim API for worldwide city search
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=8&featuretype=city&dedupe=1`;
+
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error('Nominatim API failed');
+
+            const data = await response.json();
+
+            if (data.length === 0) {
+                results.innerHTML = '<div class="autocomplete-item" style="color: #888;">No cities found</div>';
+                return;
+            }
+
+            // Filter to only show places that are cities/towns/villages
+            const cityTypes = ['city', 'town', 'village', 'municipality', 'administrative'];
+            const cities = data.filter(place => {
+                const type = place.type || place.class;
+                return cityTypes.some(t => type?.includes(t)) || place.addresstype === 'city';
+            });
+
+            // If no city-type results, show all results
+            const displayResults = cities.length > 0 ? cities : data;
+
+            results.innerHTML = displayResults.map(place => {
+                const city = place.address?.city || place.address?.town || place.address?.village ||
+                            place.address?.municipality || place.name || '';
+                const state = place.address?.state || place.address?.region || '';
+                const country = place.address?.country || '';
+                const displayName = formatLocationDisplay(city, state, country);
+
+                return `<div class="autocomplete-item"
+                    data-city="${escapeHtml(city)}"
+                    data-state="${escapeHtml(state)}"
+                    data-country="${escapeHtml(country)}"
+                    data-lat="${place.lat}"
+                    data-lon="${place.lon}"
+                    data-display="${escapeHtml(displayName)}">
+                    ${displayName}
+                </div>`;
+            }).join('');
+
+            // Add click handlers
+            results.querySelectorAll('.autocomplete-item').forEach(item => {
+                if (item.dataset.lat) {
+                    item.onclick = () => selectHomeCity(item);
+                }
+            });
+
+        } catch (error) {
+            console.error('Nominatim error:', error);
+            results.innerHTML = '<div class="autocomplete-item" style="color: #f44;">Search failed, try again</div>';
         }
+    }, 400); // 400ms debounce to respect rate limits
 
-        results.innerHTML = matches.map(c =>
-            `<div class="autocomplete-item" data-city="${c.city}" data-state="${c.state}" data-lat="${c.lat}" data-lon="${c.lon}">
-                ${c.city}, ${c.state}
-            </div>`
-        ).join('');
-
-        results.classList.add('show');
-
-        // Add click handlers
-        results.querySelectorAll('.autocomplete-item').forEach(item => {
-            item.onclick = () => selectHomeCity(item);
-        });
+    input.addEventListener('input', (e) => {
+        searchCities(e.target.value.trim());
     });
 
     // Close dropdown when clicking outside
@@ -1060,14 +1285,31 @@ function initAutocomplete() {
     });
 }
 
+// Format location display based on what info we have
+function formatLocationDisplay(city, state, country) {
+    const parts = [city];
+    if (state && state !== city) parts.push(state);
+    if (country) parts.push(country);
+    return parts.filter(p => p).join(', ');
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function selectHomeCity(item) {
     const city = item.dataset.city;
     const state = item.dataset.state;
+    const country = item.dataset.country || '';
     const lat = parseFloat(item.dataset.lat);
     const lon = parseFloat(item.dataset.lon);
+    const displayName = item.dataset.display;
 
-    selectedHomeCity = { city, state, lat, lon };
-    document.getElementById('homeCity').value = `${city}, ${state}`;
+    selectedHomeCity = { city, state, country, lat, lon };
+    document.getElementById('homeCity').value = displayName;
     document.getElementById('homeCityResults').classList.remove('show');
 
     // Update travel time info with new home city
@@ -1414,7 +1656,10 @@ function addDestinationMarker(dest, travelers, nights) {
     let weatherDisplay = '';
     if (dest.weather) {
         const weatherEmoji = dest.weather.conditions.split(' ')[0]; // Get just the emoji
-        weatherDisplay = `<span class="marker-weather">${weatherEmoji} ${dest.weather.avgHigh}°</span>`;
+        const isClimate = dest.weather.type === 'climate';
+        // Add a small "~" prefix for typical/climate data to indicate it's an average
+        const tempPrefix = isClimate ? '~' : '';
+        weatherDisplay = `<span class="marker-weather" title="${isClimate ? 'Typical weather for ' + dest.weather.monthName : 'Forecast'}">${weatherEmoji} ${tempPrefix}${dest.weather.avgHigh}°</span>`;
     }
 
     const icon = L.divIcon({
@@ -1450,24 +1695,39 @@ function createPopupContent(dest, travelers, nights) {
     // Format travel time
     const travelTimeStr = formatTravelTime(dest.travelTime);
 
-    // Weather info
+    // Weather info - differentiate between forecast and climate data
     let weatherHtml = '';
     if (dest.weather) {
+        const isClimate = dest.weather.type === 'climate';
+        const weatherTitle = isClimate
+            ? `📅 Typical ${dest.weather.monthName} Weather`
+            : '🌤️ Weather Forecast';
+        const tempLabel = isClimate ? 'Typical Temps' : 'Temperature';
+        const rainLabel = isClimate ? 'Typical Rain' : 'Rain Chance';
+        const climateNote = isClimate
+            ? `<div class="popup-row"><span class="popup-row-label" style="font-style: italic; color: #888;">Based on historical averages</span></div>`
+            : '';
+        const climateDesc = isClimate && dest.weather.description
+            ? `<div class="popup-row"><span class="popup-row-label">Tip</span><span class="popup-row-value" style="font-size: 11px;">${dest.weather.description}</span></div>`
+            : '';
+
         weatherHtml = `
             <div class="popup-section">
-                <h4>🌤️ Weather Forecast</h4>
+                <h4>${weatherTitle}</h4>
                 <div class="popup-row">
                     <span class="popup-row-label">Conditions</span>
                     <span class="popup-row-value">${dest.weather.conditions}</span>
                 </div>
                 <div class="popup-row">
-                    <span class="popup-row-label">Temperature</span>
+                    <span class="popup-row-label">${tempLabel}</span>
                     <span class="popup-row-value">${dest.weather.avgLow}°F - ${dest.weather.avgHigh}°F</span>
                 </div>
                 <div class="popup-row">
-                    <span class="popup-row-label">Rain Chance</span>
+                    <span class="popup-row-label">${rainLabel}</span>
                     <span class="popup-row-value">${dest.weather.rainChance}%</span>
                 </div>
+                ${climateDesc}
+                ${climateNote}
             </div>
         `;
     }
