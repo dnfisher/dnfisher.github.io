@@ -46,7 +46,12 @@ const API_KEYS = {
         username: 'dnfisher'
     },
     // Optional: OpenRouteService for driving routes: https://openrouteservice.org
-    openRouteService: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjA4ZGYyZTM0NWUwODRjMmE5Yjg0NThkOTdkMTcxOGE5IiwiaCI6Im11cm11cjY0In0='   // Free key, 2000 calls/day
+    openRouteService: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjA4ZGYyZTM0NWUwODRjMmE5Yjg0NThkOTdkMTcxOGE5IiwiaCI6Im11cm11cjY0In0=',   // Free key, 2000 calls/day
+    // TravelTime: Get free key at https://traveltime.com (up to 4 hour isochrones)
+    travelTime: {
+        appId: 'b0f55724',
+        apiKey: 'e6e93cfb49a93efec0c59d018ed6e5b8'
+    }
 };
 
 // Country data for currency and safety lookups
@@ -637,15 +642,22 @@ async function fetchDrivingRoute(homeLat, homeLon, destLat, destLon) {
 }
 
 // ============================================
-// OPENROUTESERVICE API - Isochrones
-// Get accurate reachable area polygons for driving
+// TRAVELTIME API - Isochrones
+// Get accurate reachable area polygons for driving (up to 4 hours)
 // ============================================
 let currentIsochrone = null; // Store the current isochrone layer
 
 async function fetchDrivingIsochrone(lat, lon, timeSeconds) {
-    if (!API_KEYS.openRouteService) {
-        console.log('Isochrone: No ORS API key configured');
+    if (!API_KEYS.travelTime || !API_KEYS.travelTime.appId) {
+        console.log('Isochrone: No TravelTime API key configured');
         return null;
+    }
+
+    // TravelTime supports up to 4 hours (14400 seconds)
+    const maxSeconds = 14400;
+    if (timeSeconds > maxSeconds) {
+        console.log(`Isochrone: Capping time from ${timeSeconds}s to ${maxSeconds}s (4h max)`);
+        timeSeconds = maxSeconds;
     }
 
     const cacheKey = `iso-${lat.toFixed(2)},${lon.toFixed(2)}-${timeSeconds}`;
@@ -655,21 +667,35 @@ async function fetchDrivingIsochrone(lat, lon, timeSeconds) {
     }
 
     try {
-        const url = 'https://api.openrouteservice.org/v2/isochrones/driving-car';
+        const url = 'https://api.traveltimeapp.com/v4/time-map';
+
+        // Use departure time as now
+        const departureTime = new Date().toISOString();
+
         const requestBody = {
-            locations: [[lon, lat]], // ORS uses [lon, lat] format
-            range: [timeSeconds],
-            range_type: 'time',
-            smoothing: 0.5
+            departure_searches: [{
+                id: 'driving-isochrone',
+                coords: {
+                    lat: lat,
+                    lng: lon
+                },
+                departure_time: departureTime,
+                travel_time: timeSeconds,
+                transportation: {
+                    type: 'driving'
+                }
+            }]
         };
 
-        console.log('Isochrone: Fetching from ORS', { lat, lon, timeSeconds, url });
+        console.log('Isochrone: Fetching from TravelTime', { lat, lon, timeSeconds, url });
 
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Authorization': API_KEYS.openRouteService,
-                'Content-Type': 'application/json'
+                'X-Application-Id': API_KEYS.travelTime.appId,
+                'X-Api-Key': API_KEYS.travelTime.apiKey,
+                'Content-Type': 'application/json',
+                'Accept': 'application/geo+json'
             },
             body: JSON.stringify(requestBody)
         });
@@ -678,19 +704,33 @@ async function fetchDrivingIsochrone(lat, lon, timeSeconds) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Isochrone API error:', response.status, errorText);
+            console.error('TravelTime API error:', response.status, errorText);
             return null;
         }
 
         const data = await response.json();
         console.log('Isochrone: Response data', data);
 
+        // TravelTime returns GeoJSON when Accept header is application/geo+json
         if (data.features && data.features[0]) {
+            const geometry = data.features[0].geometry;
+            // Handle both Polygon and MultiPolygon
+            let coords;
+            if (geometry.type === 'MultiPolygon') {
+                // Use the largest polygon (first one is usually the main area)
+                coords = geometry.coordinates[0];
+            } else {
+                coords = geometry.coordinates;
+            }
+
             const result = {
-                polygon: data.features[0].geometry,
+                polygon: {
+                    type: 'Polygon',
+                    coordinates: coords
+                },
                 properties: data.features[0].properties
             };
-            console.log('Isochrone: Successfully parsed polygon with', result.polygon.coordinates[0].length, 'points');
+            console.log('Isochrone: Successfully parsed polygon');
             apiCache.driving[cacheKey] = result;
             return result;
         }
@@ -698,7 +738,7 @@ async function fetchDrivingIsochrone(lat, lon, timeSeconds) {
         console.log('Isochrone: No features in response');
         return null;
     } catch (error) {
-        console.error('OpenRouteService isochrone error:', error);
+        console.error('TravelTime isochrone error:', error);
         return null;
     }
 }
@@ -2854,14 +2894,22 @@ async function searchDestinations(searchInArea = false) {
         console.log('UK destinations found:', ukDests.length, ukDests.slice(0, 3).map(d => d.city));
 
         // Fetch isochrone for drive mode - this gives us accurate reachable area
+        // TravelTime API supports up to 4 hours
         let isochroneData = null;
-        if ((travelMode === 'drive' || travelMode === 'both') && maxHours > 0 && API_KEYS.openRouteService) {
-            console.log('Fetching driving isochrone for', maxHours, 'hours...');
-            const timeSeconds = maxHours * 3600; // Convert hours to seconds
+        const MAX_ISOCHRONE_HOURS = 4; // TravelTime supports up to 4 hours
+        if ((travelMode === 'drive' || travelMode === 'both') && maxHours > 0 && API_KEYS.travelTime && API_KEYS.travelTime.appId) {
+            const isochroneHours = Math.min(maxHours, MAX_ISOCHRONE_HOURS);
+            console.log('Fetching driving isochrone for', isochroneHours, 'hour(s)...', maxHours > MAX_ISOCHRONE_HOURS ? `(capped from ${maxHours}h due to API limit)` : '');
+            const timeSeconds = isochroneHours * 3600; // Convert hours to seconds
             isochroneData = await fetchDrivingIsochrone(selectedHomeCity.lat, selectedHomeCity.lon, timeSeconds);
             if (isochroneData) {
                 console.log('Isochrone fetched successfully');
-                displayIsochrone(isochroneData, selectedHomeCity);
+                // Display isochrone (show for all supported times up to 4 hours)
+                if (maxHours <= MAX_ISOCHRONE_HOURS) {
+                    displayIsochrone(isochroneData, selectedHomeCity);
+                } else {
+                    console.log('Not displaying isochrone (time was capped), using circle radius instead');
+                }
             } else {
                 console.log('Isochrone fetch failed, falling back to distance-based filtering');
             }
@@ -2944,8 +2992,9 @@ async function searchDestinations(searchInArea = false) {
             // Use generous estimate (faster speed) to avoid filtering out reachable destinations
             const roughTravelTime = calculateTravelTime(selectedHomeCity, destWithType, distance);
 
-            // For drive mode with isochrone, use the accurate polygon for filtering
-            if (effectiveType === 'drive' && isochroneData && isochroneData.polygon) {
+            // For drive mode with valid isochrone (not capped), use the accurate polygon for filtering
+            const useIsochroneFilter = effectiveType === 'drive' && isochroneData && isochroneData.polygon && maxHours <= MAX_ISOCHRONE_HOURS;
+            if (useIsochroneFilter) {
                 const inIsochrone = isPointInIsochrone(dest.lat, dest.lon, isochroneData.polygon);
                 if (!inIsochrone) {
                     filterStats.isochroneFilter++;
@@ -2953,7 +3002,7 @@ async function searchDestinations(searchInArea = false) {
                     continue;
                 }
             } else if (maxHours > 0) {
-                // Fallback to time-based filter when no isochrone available
+                // Fallback to time-based filter when no isochrone or isochrone was capped
                 const filterBuffer = effectiveType === 'drive' ? 1.3 : 1.0;
                 if (roughTravelTime > maxHours * filterBuffer) {
                     filterStats.timeFilter++;
