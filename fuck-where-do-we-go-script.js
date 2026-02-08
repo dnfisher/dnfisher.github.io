@@ -1175,79 +1175,163 @@ async function fetchDestinationData(dest, startDate, endDate, travelers) {
 
 // Destinations data with base prices
 // Prices are baseline estimates that get adjusted for seasonality
+// touristScore: 1-10 scale (10=world famous, 7-8=major destination, 5-6=regional highlight, 3-4=worth visiting, 1-2=hidden gem)
 const DESTINATIONS = [
     // Drivable from NYC (within ~8 hours)
     { city: "Catskills", region: "New York", country: "USA", lat: 42.1, lon: -74.4,
       type: "drive", driveHoursFromNYC: 2.5,
       accommodation: { budget: 80, mid: 150, luxury: 350 },
       activities: 40, food: 60, description: "Escape to rustic mountain cabins, pristine hiking trails, and charming small towns. Perfect for a cozy weekend retreat with stunning fall foliage and winter skiing.",
+      highlights: ["Fall Foliage", "Hiking", "Cozy Cabins"],
+      touristScore: 5,
       seasonality: { winter: 1.3, spring: 0.9, summer: 1.2, fall: 1.4 } },
 
     { city: "Cape Cod", region: "Massachusetts", country: "USA", lat: 41.67, lon: -70.3,
       type: "drive", driveHoursFromNYC: 5,
       accommodation: { budget: 100, mid: 180, luxury: 400 },
       activities: 50, food: 70, description: "Classic New England charm with sandy beaches, fresh lobster rolls, lighthouses, and quaint seaside villages. Best enjoyed in summer but magical year-round.",
+      highlights: ["Beaches", "Lobster Rolls", "Lighthouses"],
+      touristScore: 7,
       seasonality: { winter: 0.6, spring: 0.8, summer: 1.5, fall: 1.0 } },
 
     { city: "Philadelphia", region: "Pennsylvania", country: "USA", lat: 39.95, lon: -75.17,
       type: "drive", driveHoursFromNYC: 2,
       accommodation: { budget: 70, mid: 140, luxury: 280 },
       activities: 35, food: 55, description: "Birthplace of American democracy with world-class museums, a thriving food scene, and the iconic cheesesteak. History buffs and foodies alike will love it here.",
+      highlights: ["American History", "Food Scene", "Museums"],
+      touristScore: 8,
       seasonality: { winter: 0.85, spring: 1.0, summer: 1.1, fall: 1.05 } },
 
     { city: "Washington DC", region: "DC", country: "USA", lat: 38.9, lon: -77.04,
       type: "drive", driveHoursFromNYC: 4,
       accommodation: { budget: 90, mid: 170, luxury: 350 },
       activities: 25, food: 60, description: "The nation's capital offers free world-class museums, iconic monuments, and vibrant neighborhoods. Cherry blossoms in spring are unforgettable.",
+      highlights: ["Smithsonian Museums", "Monuments", "Cherry Blossoms"],
+      touristScore: 9,
       seasonality: { winter: 0.8, spring: 1.3, summer: 1.0, fall: 1.0 } },
 
     { city: "Boston", region: "Massachusetts", country: "USA", lat: 42.36, lon: -71.06,
       type: "drive", driveHoursFromNYC: 4,
       accommodation: { budget: 100, mid: 190, luxury: 400 },
       activities: 45, food: 70, description: "Walk the Freedom Trail through American history, catch a game at Fenway, and feast on the freshest seafood. A perfect blend of old and new.",
+      highlights: ["Freedom Trail", "Fenway Park", "Seafood"],
+      touristScore: 8,
       seasonality: { winter: 0.75, spring: 1.0, summer: 1.2, fall: 1.3 } },
 
     { city: "Atlantic City", region: "New Jersey", country: "USA", lat: 39.36, lon: -74.42,
       type: "drive", driveHoursFromNYC: 2.5,
       accommodation: { budget: 60, mid: 120, luxury: 280 },
       activities: 50, food: 55, description: "Vegas vibes on the East Coast with beachfront casinos, a famous boardwalk, and surprisingly good dining. Great for a quick weekend getaway.",
+      highlights: ["Casinos", "Boardwalk", "Beach"],
+      touristScore: 6,
       seasonality: { winter: 0.7, spring: 0.9, summer: 1.4, fall: 0.9 } },
 
     { city: "Poconos", region: "Pennsylvania", country: "USA", lat: 41.1, lon: -75.3,
       type: "drive", driveHoursFromNYC: 2,
       accommodation: { budget: 70, mid: 140, luxury: 300 },
       activities: 45, food: 50, description: "Year-round mountain escape with skiing, water parks, hiking, and romantic cabin retreats. Popular for couples and family getaways alike.",
+      highlights: ["Skiing", "Water Parks", "Romantic Cabins"],
+      touristScore: 5,
       seasonality: { winter: 1.4, spring: 0.8, summer: 1.1, fall: 1.2 } },
 
     { city: "Hudson Valley", region: "New York", country: "USA", lat: 41.5, lon: -73.9,
       type: "drive", driveHoursFromNYC: 1.5,
       accommodation: { budget: 90, mid: 180, luxury: 400 },
       activities: 40, food: 65, description: "Rolling hills, award-winning wineries, farm-to-table dining, and stunning fall colors. NYC's favorite escape for food and nature lovers.",
+      highlights: ["Wineries", "Farm-to-Table", "Fall Colors"],
+      touristScore: 6,
       seasonality: { winter: 0.7, spring: 1.0, summer: 1.1, fall: 1.5 } },
 
     { city: "Vermont", region: "Vermont", country: "USA", lat: 44.26, lon: -72.58,
       type: "drive", driveHoursFromNYC: 5,
       accommodation: { budget: 85, mid: 160, luxury: 350 },
       activities: 50, food: 55, description: "Quintessential New England with covered bridges, maple syrup farms, craft breweries, and some of the best skiing on the East Coast.",
+      highlights: ["Fall Foliage", "Skiing", "Maple Syrup"],
+      touristScore: 7,
       seasonality: { winter: 1.5, spring: 0.7, summer: 1.0, fall: 1.4 } },
 
     { city: "Montreal", region: "Quebec", country: "Canada", lat: 45.5, lon: -73.57,
       type: "drive", driveHoursFromNYC: 6,
       accommodation: { budget: 70, mid: 130, luxury: 280 },
       activities: 40, food: 50, description: "A slice of Europe in North America. French-speaking city with incredible food scene, vibrant nightlife, beautiful architecture, and world-famous poutine.",
+      highlights: ["French Culture", "Food Scene", "Old Montreal"],
+      touristScore: 8,
       seasonality: { winter: 0.8, spring: 0.9, summer: 1.3, fall: 1.1 } },
+
+    // Long Island - South Fork (The Hamptons)
+    { city: "Montauk", region: "New York", country: "USA", lat: 41.04, lon: -71.95,
+      type: "drive", driveHoursFromNYC: 2.5,
+      accommodation: { budget: 120, mid: 250, luxury: 600 },
+      activities: 50, food: 70, description: "The End - where Long Island meets the Atlantic. Legendary surf spot, iconic lighthouse, fresh seafood, and laid-back beach vibes away from Hamptons glitz.",
+      highlights: ["Surfing", "Lighthouse", "Seafood"],
+      touristScore: 7,
+      seasonality: { winter: 0.5, spring: 0.8, summer: 1.6, fall: 0.9 } },
+
+    { city: "East Hampton", region: "New York", country: "USA", lat: 40.96, lon: -72.18,
+      type: "drive", driveHoursFromNYC: 2,
+      accommodation: { budget: 150, mid: 350, luxury: 800 },
+      activities: 45, food: 80, description: "The heart of the Hamptons with pristine beaches, celebrity sightings, world-class restaurants, and charming Main Street shopping.",
+      highlights: ["Beaches", "Fine Dining", "Celebrity Scene"],
+      touristScore: 8,
+      seasonality: { winter: 0.4, spring: 0.7, summer: 1.7, fall: 0.8 } },
+
+    { city: "Southampton", region: "New York", country: "USA", lat: 40.88, lon: -72.39,
+      type: "drive", driveHoursFromNYC: 1.75,
+      accommodation: { budget: 140, mid: 320, luxury: 750 },
+      activities: 45, food: 75, description: "America's oldest summer colony with gorgeous beaches, historic estates, upscale boutiques, and the famous Cooper's Beach.",
+      highlights: ["Historic Estates", "Beaches", "Boutique Shopping"],
+      touristScore: 7,
+      seasonality: { winter: 0.4, spring: 0.7, summer: 1.7, fall: 0.8 } },
+
+    { city: "Sag Harbor", region: "New York", country: "USA", lat: 41.00, lon: -72.29,
+      type: "drive", driveHoursFromNYC: 2,
+      accommodation: { budget: 130, mid: 280, luxury: 600 },
+      activities: 40, food: 70, description: "Historic whaling village turned artsy enclave. Charming harbor, indie bookstores, great restaurants, and a more relaxed Hamptons vibe.",
+      highlights: ["Harbor Views", "Art Galleries", "Historic Village"],
+      touristScore: 6,
+      seasonality: { winter: 0.5, spring: 0.8, summer: 1.6, fall: 0.9 } },
+
+    // Long Island - North Fork
+    { city: "Greenport", region: "New York", country: "USA", lat: 41.10, lon: -72.36,
+      type: "drive", driveHoursFromNYC: 2,
+      accommodation: { budget: 100, mid: 200, luxury: 400 },
+      activities: 40, food: 60, description: "Charming maritime village with excellent wineries, oyster farms, antique carousel, and a refreshingly unpretentious alternative to the Hamptons.",
+      highlights: ["Wine Tasting", "Oysters", "Maritime Charm"],
+      touristScore: 6,
+      seasonality: { winter: 0.5, spring: 0.9, summer: 1.5, fall: 1.2 } },
+
+    { city: "Shelter Island", region: "New York", country: "USA", lat: 41.07, lon: -72.34,
+      type: "drive", driveHoursFromNYC: 2.5,
+      accommodation: { budget: 110, mid: 220, luxury: 450 },
+      activities: 35, food: 55, description: "Peaceful island accessible only by ferry. Nature preserve, quiet beaches, kayaking, and a true escape from the bustle. The Hamptons' hidden secret.",
+      highlights: ["Nature Preserve", "Kayaking", "Peace & Quiet"],
+      touristScore: 5,
+      seasonality: { winter: 0.4, spring: 0.8, summer: 1.5, fall: 0.9 } },
+
+    // Fire Island
+    { city: "Fire Island", region: "New York", country: "USA", lat: 40.65, lon: -73.15,
+      type: "drive", driveHoursFromNYC: 1.5,
+      accommodation: { budget: 100, mid: 200, luxury: 450 },
+      activities: 40, food: 55, description: "Car-free barrier island with pristine beaches, legendary LGBTQ+ communities, deer roaming the streets, and the Sunken Forest nature trail.",
+      highlights: ["Car-Free Island", "LGBTQ+ Friendly", "Pristine Beaches"],
+      touristScore: 7,
+      seasonality: { winter: 0.3, spring: 0.7, summer: 1.7, fall: 0.7 } },
 
     // Drivable from Los Angeles (within ~6 hours)
     { city: "Palm Springs", region: "California", country: "USA", lat: 33.83, lon: -116.55,
       type: "drive",
       accommodation: { budget: 80, mid: 180, luxury: 450 },
       activities: 40, food: 55, description: "Retro desert paradise with stunning mid-century modern architecture, natural hot springs, and year-round sunshine. Great for pool parties and relaxation.",
+      highlights: ["Mid-Century Architecture", "Hot Springs", "Desert Vibes"],
+      touristScore: 7,
       seasonality: { winter: 1.4, spring: 1.2, summer: 0.6, fall: 1.0 } },
 
     { city: "San Diego", region: "California", country: "USA", lat: 32.72, lon: -117.16,
       type: "drive",
       accommodation: { budget: 90, mid: 170, luxury: 380 },
       activities: 50, food: 55, description: "Perfect weather year-round with world-famous zoo, stunning beaches, vibrant Gaslamp Quarter, and an incredible craft beer scene.",
+      highlights: ["San Diego Zoo", "Beaches", "Craft Beer"],
+      touristScore: 8,
       seasonality: { winter: 1.0, spring: 1.1, summer: 1.3, fall: 1.1 } },
 
     { city: "Santa Barbara", region: "California", country: "USA", lat: 34.42, lon: -119.7,
@@ -4157,38 +4241,40 @@ function createPopupContent(dest, travelers, nights) {
     const costs = dest.costs;
     const travelTimeStr = formatTravelTime(dest.travelTime);
 
-    // Season tag styling
-    const seasonTag = costs.seasonMultiplier > 1.1
-        ? '<span class="popup-tag warning">🔥 Peak Season</span>'
-        : costs.seasonMultiplier < 0.9
-            ? '<span class="popup-tag highlight">💰 Off-Season</span>'
-            : '<span class="popup-tag">📅 Shoulder Season</span>';
+    // Generate a unique ID for this popup's collapsible
+    const popupId = `popup-${dest.city.replace(/\s+/g, '-')}-${Date.now()}`;
 
-    // Hero section with image or fallback
-    let heroHtml = '';
-    if (dest.image && dest.image.url) {
-        heroHtml = `
-            <div class="popup-hero">
-                <img src="${dest.image.url}" alt="${dest.city}" loading="lazy">
-                <div class="popup-hero-overlay">
-                    <h2 class="popup-hero-title">${dest.city}</h2>
-                    <div class="popup-hero-subtitle">${dest.region}, ${dest.country}</div>
-                </div>
-                <div class="popup-hero-credit">
-                    <a href="${dest.image.credit.link}" target="_blank" rel="noopener">📷 ${dest.image.credit.name}</a>
-                </div>
+    // Placeholder images by destination type/region
+    const placeholderImages = [
+        'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=300&fit=crop', // Road trip
+        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&h=300&fit=crop', // Lake view
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=300&fit=crop', // Beach
+        'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=300&fit=crop', // City
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop', // Mountains
+        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&h=300&fit=crop', // Europe
+        'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600&h=300&fit=crop', // Mediterranean
+        'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=600&h=300&fit=crop', // Historic
+    ];
+    // Pick a consistent placeholder based on destination name
+    const placeholderIndex = dest.city.charCodeAt(0) % placeholderImages.length;
+    const placeholderUrl = placeholderImages[placeholderIndex];
+
+    // Hero section with image (always show image now)
+    const imageUrl = dest.image?.url || placeholderUrl;
+    const imageCredit = dest.image?.credit
+        ? `<div class="popup-hero-credit"><a href="${dest.image.credit.link}" target="_blank" rel="noopener">📷 ${dest.image.credit.name}</a></div>`
+        : '';
+
+    const heroHtml = `
+        <div class="popup-hero">
+            <img src="${imageUrl}" alt="${dest.city}" loading="lazy" onerror="this.src='${placeholderUrl}'">
+            <div class="popup-hero-overlay">
+                <h2 class="popup-hero-title">${dest.city}</h2>
+                <div class="popup-hero-subtitle">${dest.region}, ${dest.country}</div>
             </div>
-        `;
-    } else {
-        heroHtml = `
-            <div class="popup-hero popup-hero-noimage">
-                <div>
-                    <h2 class="popup-hero-title">${dest.city}</h2>
-                    <div class="popup-hero-subtitle">${dest.region}, ${dest.country}</div>
-                </div>
-            </div>
-        `;
-    }
+            ${imageCredit}
+        </div>
+    `;
 
     // Weather card
     let weatherHtml = '';
@@ -4254,41 +4340,63 @@ function createPopupContent(dest, travelers, nights) {
     // Description
     const description = dest.description || dest.wikiDescription || 'A beautiful destination worth exploring.';
 
-    // Highlights section (top reasons to visit)
+    // Tourist score badge
+    let touristScoreHtml = '';
+    if (dest.touristScore) {
+        const score = dest.touristScore;
+        let scoreLabel, scoreClass, scoreIcon;
+        if (score >= 9) {
+            scoreLabel = 'World Famous';
+            scoreClass = 'score-world-famous';
+            scoreIcon = '🌟';
+        } else if (score >= 7) {
+            scoreLabel = 'Must Visit';
+            scoreClass = 'score-must-visit';
+            scoreIcon = '🔥';
+        } else if (score >= 5) {
+            scoreLabel = 'Popular';
+            scoreClass = 'score-popular';
+            scoreIcon = '⭐';
+        } else if (score >= 3) {
+            scoreLabel = 'Worth a Trip';
+            scoreClass = 'score-worth-trip';
+            scoreIcon = '👍';
+        } else {
+            scoreLabel = 'Hidden Gem';
+            scoreClass = 'score-hidden-gem';
+            scoreIcon = '💎';
+        }
+        touristScoreHtml = `<span class="tourist-score ${scoreClass}">${scoreIcon} ${scoreLabel}</span>`;
+    }
+
+    // Highlights as inline tags
     let highlightsHtml = '';
     if (dest.highlights && dest.highlights.length > 0) {
         const highlightTags = dest.highlights.map(h => `<span class="highlight-tag">${h}</span>`).join('');
-        highlightsHtml = `
-            <div class="popup-highlights">
-                <div class="popup-highlights-label">Why visit</div>
-                <div class="popup-highlights-list">${highlightTags}</div>
-            </div>
-        `;
+        highlightsHtml = `<div class="popup-highlights-inline">${highlightTags}</div>`;
     }
 
-    // Transport details
+    // Quick info badges (travel time, weather summary)
     const transportIcon = costs.transportType === 'drive' ? '🚗' : '✈️';
-    const transportLabel = costs.transportType === 'drive' ? 'Drive' : 'Flights';
-    const transportDetail = costs.transportType === 'drive'
-        ? `${Math.round(dest.distance)} mi`
-        : `${travelers} traveler${travelers > 1 ? 's' : ''}`;
+    const weatherBadge = dest.weather
+        ? `<span class="info-badge">${dest.weather.conditions?.split(' ')[0] || '🌤️'} ${dest.weather.avgHigh || dest.weather.current?.temp || ''}°</span>`
+        : '';
+    const seasonBadge = costs.seasonMultiplier > 1.1
+        ? '<span class="info-badge warning">🔥 Peak</span>'
+        : costs.seasonMultiplier < 0.9
+            ? '<span class="info-badge highlight">💰 Off-Season</span>'
+            : '';
 
-    // Advisory tag (clickable to show explanation)
-    let advisoryTag = '';
-    if (dest.advisory) {
-        const safetyClass = dest.advisory.level <= 2 ? 'highlight' : dest.advisory.level >= 3 ? 'warning' : '';
-        advisoryTag = `<span class="popup-tag ${safetyClass} clickable" onclick="showSecurityModal(${dest.advisory.level})" title="Click for details">🛡️ Level ${dest.advisory.level} ⓘ</span>`;
+    // Advisory badge
+    let advisoryBadge = '';
+    if (dest.advisory && dest.advisory.level >= 3) {
+        advisoryBadge = `<span class="info-badge warning" onclick="showSecurityModal(${dest.advisory.level})" style="cursor:pointer">⚠️ Advisory</span>`;
     }
 
-    // Currency info
-    let currencyHtml = '';
+    // Currency info (compact)
+    let currencyBadge = '';
     if (dest.localCurrency && dest.localCurrency !== 'USD' && dest.exchangeRate) {
-        currencyHtml = `
-            <div class="popup-info-row">
-                <span class="popup-info-label">💱 Exchange Rate</span>
-                <span class="popup-info-value">$1 = ${dest.exchangeRate.toFixed(2)} ${dest.localCurrency}</span>
-            </div>
-        `;
+        currencyBadge = `<span class="info-badge">💱 $1 = ${dest.exchangeRate.toFixed(1)} ${dest.localCurrency}</span>`;
     }
 
     // Generate booking links
@@ -4313,88 +4421,83 @@ function createPopupContent(dest, travelers, nights) {
     // Airbnb link
     const airbnbUrl = `https://www.airbnb.com/s/${encodeURIComponent(dest.city + '--' + dest.country)}/homes?checkin=${departureDate}&checkout=${returnDate}&adults=${travelers}`;
 
-    // Only show flight links for fly destinations
-    let bookingLinksHtml = '';
+    // Collapsible booking section
+    let flightLinksHtml = '';
     if (costs.transportType === 'fly') {
-        bookingLinksHtml = `
-            <div class="popup-booking-links">
-                <div class="booking-section">
-                    <span class="booking-label">✈️ Flights</span>
-                    <div class="booking-buttons">
-                        <a href="${googleFlightsUrl}" target="_blank" rel="noopener" class="booking-btn">Google Flights</a>
-                        <a href="${kayakUrl}" target="_blank" rel="noopener" class="booking-btn">Kayak</a>
-                    </div>
-                </div>
-                <div class="booking-section">
-                    <span class="booking-label">🏨 Stay</span>
-                    <div class="booking-buttons">
-                        <a href="${bookingUrl}" target="_blank" rel="noopener" class="booking-btn">Booking.com</a>
-                        <a href="${airbnbUrl}" target="_blank" rel="noopener" class="booking-btn">Airbnb</a>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else {
-        bookingLinksHtml = `
-            <div class="popup-booking-links">
-                <div class="booking-section">
-                    <span class="booking-label">🏨 Stay</span>
-                    <div class="booking-buttons">
-                        <a href="${bookingUrl}" target="_blank" rel="noopener" class="booking-btn">Booking.com</a>
-                        <a href="${airbnbUrl}" target="_blank" rel="noopener" class="booking-btn">Airbnb</a>
-                    </div>
+        flightLinksHtml = `
+            <div class="booking-row">
+                <span class="booking-row-label">✈️ Flights</span>
+                <div class="booking-row-links">
+                    <a href="${googleFlightsUrl}" target="_blank" rel="noopener" class="booking-link">Google Flights</a>
+                    <a href="${kayakUrl}" target="_blank" rel="noopener" class="booking-link">Kayak</a>
                 </div>
             </div>
         `;
     }
 
+    const bookingDrawerHtml = `
+        <div class="booking-drawer">
+            <button class="booking-drawer-toggle" onclick="this.parentElement.classList.toggle('open')">
+                <span>📋 Book This Trip</span>
+                <span class="drawer-arrow">▼</span>
+            </button>
+            <div class="booking-drawer-content">
+                ${flightLinksHtml}
+                <div class="booking-row">
+                    <span class="booking-row-label">🏨 Accommodation</span>
+                    <div class="booking-row-links">
+                        <a href="${bookingUrl}" target="_blank" rel="noopener" class="booking-link">Booking.com</a>
+                        <a href="${airbnbUrl}" target="_blank" rel="noopener" class="booking-link">Airbnb</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Cost breakdown - cleaner inline format
+    const transportLabel = costs.transportType === 'drive' ? 'Gas' : 'Flights';
+    const costBreakdown = `
+        <div class="cost-breakdown">
+            <div class="cost-line"><span>${transportIcon} ${transportLabel}</span><span>$${costs.transport}</span></div>
+            <div class="cost-line"><span>🏨 ${nights} nights</span><span>$${costs.accommodation}</span></div>
+            <div class="cost-line"><span>🍽️ Food & drinks</span><span>$${costs.food}</span></div>
+            <div class="cost-line"><span>🎯 Activities</span><span>$${costs.activities}</span></div>
+        </div>
+    `;
+
     return `
-        <div class="popup-content">
+        <div class="popup-content popup-redesign">
             ${heroHtml}
 
             <div class="popup-body">
-                ${highlightsHtml}
+                <div class="popup-header-row">
+                    ${touristScoreHtml}
+                    <span class="info-badge">${transportIcon} ${travelTimeStr}</span>
+                    ${weatherBadge}
+                    ${seasonBadge}
+                    ${advisoryBadge}
+                </div>
 
                 <p class="popup-description">${description}</p>
 
-                <div class="popup-tags">
-                    ${seasonTag}
-                    <span class="popup-tag">⏱️ ${travelTimeStr}</span>
-                    ${advisoryTag}
+                ${highlightsHtml}
+
+                ${costBreakdown}
+
+                ${currencyBadge ? `<div class="popup-currency">${currencyBadge}</div>` : ''}
+
+                ${bookingDrawerHtml}
+            </div>
+
+            <div class="popup-footer">
+                <div class="popup-footer-left">
+                    <div class="footer-total-label">Estimated Total</div>
+                    <div class="footer-breakdown">${travelers} traveler${travelers > 1 ? 's' : ''} · ${nights} nights</div>
                 </div>
-
-                ${weatherHtml}
-
-                <div class="popup-costs-row">
-                    <div class="popup-cost-item">
-                        <span class="cost-icon">${transportIcon}</span>
-                        <span class="cost-value">$${costs.transport}</span>
-                        <span class="cost-label">${transportLabel}</span>
-                    </div>
-                    <div class="popup-cost-item">
-                        <span class="cost-icon">🏨</span>
-                        <span class="cost-value">$${costs.accommodation}</span>
-                        <span class="cost-label">${nights}n</span>
-                    </div>
-                    <div class="popup-cost-item">
-                        <span class="cost-icon">🍽️</span>
-                        <span class="cost-value">$${costs.food}</span>
-                        <span class="cost-label">Food</span>
-                    </div>
-                    <div class="popup-cost-item">
-                        <span class="cost-icon">🎯</span>
-                        <span class="cost-value">$${costs.activities}</span>
-                        <span class="cost-label">Activities</span>
-                    </div>
-                    <div class="popup-cost-item total">
-                        <span class="cost-value">$${costs.total.toLocaleString()}</span>
-                        <span class="cost-label">Total</span>
-                    </div>
+                <div class="popup-footer-right">
+                    <div class="footer-total">$${costs.total.toLocaleString()}</div>
+                    <div class="footer-perday">$${costs.perDay}/day</div>
                 </div>
-
-                ${currencyHtml}
-
-                ${bookingLinksHtml}
             </div>
         </div>
     `;
@@ -4423,12 +4526,21 @@ function updateAlternativesPanel(results, budgetMin, budgetMax) {
         const imageHtml = dest.image && dest.image.thumb
             ? `<div class="alternative-thumb"><img src="${dest.image.thumb}" alt="${dest.city}" loading="lazy"></div>`
             : `<div class="alternative-icon">${dest.type === 'drive' ? '🚗' : '✈️'}</div>`;
+        // Tourist score mini indicator
+        let scoreIndicator = '';
+        if (dest.touristScore) {
+            if (dest.touristScore >= 9) scoreIndicator = '<span class="alt-score" title="World Famous">🌟</span>';
+            else if (dest.touristScore >= 7) scoreIndicator = '<span class="alt-score" title="Must Visit">🔥</span>';
+            else if (dest.touristScore >= 5) scoreIndicator = '<span class="alt-score" title="Popular">⭐</span>';
+            else if (dest.touristScore <= 2) scoreIndicator = '<span class="alt-score" title="Hidden Gem">💎</span>';
+        }
         return `
             <div class="alternative-item" onclick="focusDestination(${dest.lat}, ${dest.lon})">
                 ${imageHtml}
                 <div class="alternative-info">
                     <div class="alternative-name">
                         ${dest.city}, ${dest.country}
+                        ${scoreIndicator}
                         ${dest.advisory ? `<span style="color: ${advisoryColor}; font-size: 10px;">●</span>` : ''}
                     </div>
                     <div class="alternative-details">
