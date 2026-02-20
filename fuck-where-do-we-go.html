@@ -292,6 +292,15 @@
             display: block;
         }
 
+        .sidebar.mode-roadtrip .shared-trip-controls,
+        .sidebar.mode-roadtrip #step1 .step-header,
+        .sidebar.mode-roadtrip #step2,
+        .sidebar.mode-roadtrip #step3,
+        .sidebar.mode-roadtrip #searchBtn,
+        .sidebar.mode-roadtrip .results-panel {
+            display: none;
+        }
+
         /* Legacy travel mode toggle - kept for backwards compatibility */
         .travel-mode-toggle {
             display: flex;
@@ -1863,22 +1872,6 @@
         }
 
         /* Road Trip Planner */
-        .roadtrip-home-display {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: #363636;
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-bottom: 14px;
-            font-size: 13px;
-            color: #ccc;
-        }
-
-        .roadtrip-home-icon {
-            font-size: 16px;
-        }
-
         .label-optional {
             font-size: 11px;
             color: #666;
@@ -2108,28 +2101,30 @@
                         <div class="autocomplete-results" id="homeCityResults"></div>
                     </div>
 
-                    <label>How many travelers?</label>
-                    <div class="travelers-row">
-                        <div>
-                            <input type="number" id="travelers" value="2" min="1" max="10">
+                    <div class="shared-trip-controls">
+                        <label>How many travelers?</label>
+                        <div class="travelers-row">
+                            <div>
+                                <input type="number" id="travelers" value="2" min="1" max="10">
+                            </div>
+                            <div>
+                                <select id="accommodationType">
+                                    <option value="budget">Budget ($)</option>
+                                    <option value="mid" selected>Mid-range ($$)</option>
+                                    <option value="luxury">Luxury ($$$)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div>
-                            <select id="accommodationType">
-                                <option value="budget">Budget ($)</option>
-                                <option value="mid" selected>Mid-range ($$)</option>
-                                <option value="luxury">Luxury ($$$)</option>
-                            </select>
-                        </div>
-                    </div>
 
-                    <label>Trip duration (nights)</label>
-                    <div class="stepper-control">
-                        <button type="button" class="stepper-btn" onclick="adjustTripDuration(-1)">−</button>
-                        <div class="stepper-value">
-                            <span id="tripDurationDisplay">7 nights</span>
-                            <input type="hidden" id="tripDuration" value="7">
+                        <label>Trip duration (nights)</label>
+                        <div class="stepper-control">
+                            <button type="button" class="stepper-btn" onclick="adjustTripDuration(-1)">−</button>
+                            <div class="stepper-value">
+                                <span id="tripDurationDisplay">7 nights</span>
+                                <input type="hidden" id="tripDuration" value="7">
+                            </div>
+                            <button type="button" class="stepper-btn" onclick="adjustTripDuration(1)">+</button>
                         </div>
-                        <button type="button" class="stepper-btn" onclick="adjustTripDuration(1)">+</button>
                     </div>
 
                     <!-- Driving Planner Options -->
@@ -2166,11 +2161,6 @@
 
                     <!-- Road Trip Planner Options -->
                     <div class="planner-options roadtrip-options">
-                        <div class="roadtrip-home-display" id="roadtripHomeDisplay">
-                            <span class="roadtrip-home-icon">🏠</span>
-                            <span id="roadtripHomeLabel">Set your home city above first</span>
-                        </div>
-
                         <label>Destination city</label>
                         <div class="autocomplete-container">
                             <input type="text" id="roadtripDestination" placeholder="e.g., Nashville, TN">
