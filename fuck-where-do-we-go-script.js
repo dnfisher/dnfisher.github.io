@@ -6,12 +6,14 @@ let map;
 let markers = [];
 let destinationsData = [];
 let selectedHomeCity = null;
-let travelMode = 'drive';
+let travelMode = 'drive'; // 'drive' or 'fly' (no more 'both')
+let plannerTab = 'drive'; // Active planner tab
 let dateType = 'specific';
 let travelRadiusLayer = null; // For visualizing travel radius on map
 let homeMarker = null; // Marker for home city
 let selectedMonths = [];
-let maxTravelTime = 3; // hours
+let maxDriveTime = 3; // hours for driving
+let maxFlightTime = 4; // hours for flying
 let hasSearched = false;
 let lastSearchBounds = null;
 
@@ -1517,6 +1519,7 @@ const DESTINATIONS = [
       type: "drive",
       accommodation: { budget: 90, mid: 180, luxury: 400 },
       activities: 50, food: 55, description: "Mountains meet ocean",
+      touristScore: 8,
       seasonality: { winter: 0.9, spring: 1.0, summer: 1.3, fall: 1.0 } },
 
     // Fly destinations - Caribbean & Mexico
@@ -1524,6 +1527,7 @@ const DESTINATIONS = [
       type: "fly", flightFromNYC: { low: 250, mid: 400, high: 600 },
       accommodation: { budget: 60, mid: 150, luxury: 400 },
       activities: 50, food: 40, description: "Turquoise Caribbean waters, white sand beaches, and ancient Mayan ruins at your doorstep. From all-inclusive relaxation to adventure excursions.",
+      touristScore: 9,
       seasonality: { winter: 1.4, spring: 1.3, summer: 0.8, fall: 0.7 } },
 
     { city: "Mexico City", region: "CDMX", country: "Mexico", lat: 19.43, lon: -99.13,
@@ -1592,48 +1596,56 @@ const DESTINATIONS = [
       type: "fly", flightFromNYC: { low: 350, mid: 550, high: 900 },
       accommodation: { budget: 50, mid: 120, luxury: 280 },
       activities: 35, food: 40, description: "Europe's coolest capital. Cobblestone streets, vintage trams, incredible seafood, world-famous pastéis de nata, and beaches nearby. Amazing value for Western Europe.",
+      touristScore: 9,
       seasonality: { winter: 0.7, spring: 1.0, summer: 1.4, fall: 1.0 } },
 
     { city: "Barcelona", region: "Catalonia", country: "Spain", lat: 41.39, lon: 2.17,
       type: "fly", flightFromNYC: { low: 380, mid: 600, high: 950 },
       accommodation: { budget: 60, mid: 140, luxury: 320 },
       activities: 40, food: 50, description: "Gaudí's fantastical architecture, Mediterranean beaches, legendary nightlife, and tapas culture. A city that truly has it all.",
+      touristScore: 10,
       seasonality: { winter: 0.7, spring: 1.0, summer: 1.5, fall: 1.1 } },
 
     { city: "London", region: "England", country: "UK", lat: 51.51, lon: -0.13,
       type: "fly", flightFromNYC: { low: 400, mid: 650, high: 1000 },
       accommodation: { budget: 80, mid: 180, luxury: 400 },
       activities: 50, food: 60, description: "History meets modern",
+      touristScore: 10,
       seasonality: { winter: 0.8, spring: 1.0, summer: 1.3, fall: 1.0 } },
 
     { city: "Paris", region: "Île-de-France", country: "France", lat: 48.86, lon: 2.35,
       type: "fly", flightFromNYC: { low: 400, mid: 650, high: 1000 },
       accommodation: { budget: 80, mid: 180, luxury: 450 },
       activities: 50, food: 60, description: "Romance & croissants",
+      touristScore: 10,
       seasonality: { winter: 0.8, spring: 1.1, summer: 1.3, fall: 1.0 } },
 
     { city: "Rome", region: "Lazio", country: "Italy", lat: 41.9, lon: 12.5,
       type: "fly", flightFromNYC: { low: 420, mid: 680, high: 1050 },
       accommodation: { budget: 60, mid: 150, luxury: 350 },
       activities: 40, food: 50, description: "Ancient history & pasta",
+      touristScore: 10,
       seasonality: { winter: 0.7, spring: 1.1, summer: 1.4, fall: 1.1 } },
 
     { city: "Amsterdam", region: "North Holland", country: "Netherlands", lat: 52.37, lon: 4.9,
       type: "fly", flightFromNYC: { low: 380, mid: 600, high: 950 },
       accommodation: { budget: 70, mid: 160, luxury: 350 },
       activities: 45, food: 50, description: "Canals, bikes & art",
+      touristScore: 9,
       seasonality: { winter: 0.7, spring: 1.2, summer: 1.3, fall: 0.9 } },
 
     { city: "Dublin", region: "Leinster", country: "Ireland", lat: 53.35, lon: -6.26,
       type: "fly", flightFromNYC: { low: 350, mid: 550, high: 850 },
       accommodation: { budget: 70, mid: 150, luxury: 320 },
       activities: 40, food: 50, description: "Pubs, history & green",
+      touristScore: 8,
       seasonality: { winter: 0.7, spring: 0.9, summer: 1.3, fall: 1.0 } },
 
     { city: "Reykjavik", region: "Capital Region", country: "Iceland", lat: 64.15, lon: -21.94,
       type: "fly", flightFromNYC: { low: 300, mid: 480, high: 750 },
       accommodation: { budget: 100, mid: 200, luxury: 400 },
       activities: 80, food: 80, description: "Northern lights & nature",
+      touristScore: 9,
       seasonality: { winter: 1.0, spring: 0.9, summer: 1.4, fall: 0.9 } },
 
     // US Domestic Fly Destinations
@@ -1642,6 +1654,7 @@ const DESTINATIONS = [
       accommodation: { budget: 80, mid: 180, luxury: 450 },
       activities: 50, food: 60, description: "Art deco glamour meets Latin flair. World-class beaches, vibrant nightlife, incredible Cuban food, and year-round sunshine.",
       highlights: ["Beaches", "Nightlife", "Art Deco"],
+      touristScore: 8,
       seasonality: { winter: 1.5, spring: 1.3, summer: 0.8, fall: 0.9 } },
 
     { city: "New Orleans", region: "Louisiana", country: "USA", lat: 29.95, lon: -90.07,
@@ -1649,6 +1662,7 @@ const DESTINATIONS = [
       accommodation: { budget: 70, mid: 150, luxury: 350 },
       activities: 45, food: 55, description: "The Big Easy pulses with jazz, Creole cuisine, and historic French Quarter charm. Mardi Gras, beignets, and unforgettable nightlife.",
       highlights: ["Jazz Music", "Cajun Food", "French Quarter"],
+      touristScore: 8,
       seasonality: { winter: 1.0, spring: 1.5, summer: 0.7, fall: 1.1 } },
 
     // Cities within driving distance of New Orleans
@@ -1706,6 +1720,7 @@ const DESTINATIONS = [
       accommodation: { budget: 50, mid: 120, luxury: 350 },
       activities: 60, food: 60, description: "Sin City's neon-lit Strip offers world-class shows, celebrity chef restaurants, and endless entertainment. Day trips to Grand Canyon.",
       highlights: ["Casinos", "Shows", "Nightlife"],
+      touristScore: 9,
       seasonality: { winter: 1.0, spring: 1.1, summer: 0.8, fall: 1.2 } },
 
     { city: "Los Angeles", region: "California", country: "USA", lat: 34.05, lon: -118.24,
@@ -1713,6 +1728,7 @@ const DESTINATIONS = [
       accommodation: { budget: 90, mid: 180, luxury: 400 },
       activities: 50, food: 55, description: "Hollywood glamour, stunning beaches, world-class museums, and incredible diversity. Perfect weather year-round and endless neighborhoods to explore.",
       highlights: ["Beaches", "Hollywood", "Weather"],
+      touristScore: 9,
       seasonality: { winter: 0.9, spring: 1.0, summer: 1.2, fall: 1.0 } },
 
     { city: "San Francisco", region: "California", country: "USA", lat: 37.77, lon: -122.42,
@@ -1720,6 +1736,7 @@ const DESTINATIONS = [
       accommodation: { budget: 100, mid: 200, luxury: 450 },
       activities: 45, food: 60, description: "Iconic Golden Gate, cable cars, Alcatraz, and incredible food scene. Fog-wrapped hills, diverse neighborhoods, and tech innovation.",
       highlights: ["Golden Gate", "Food Scene", "Culture"],
+      touristScore: 9,
       seasonality: { winter: 0.85, spring: 1.0, summer: 1.2, fall: 1.1 } },
 
     { city: "San Diego", region: "California", country: "USA", lat: 32.72, lon: -117.16,
@@ -1734,6 +1751,7 @@ const DESTINATIONS = [
       accommodation: { budget: 70, mid: 150, luxury: 320 },
       activities: 45, food: 50, description: "Live Music Capital of the World with legendary BBQ, SXSW, and a thriving food truck scene. Keep Austin Weird.",
       highlights: ["Live Music", "BBQ", "SXSW"],
+      touristScore: 7,
       seasonality: { winter: 0.9, spring: 1.3, summer: 0.8, fall: 1.1 } },
 
     { city: "Dallas", region: "Texas", country: "USA", lat: 32.78, lon: -96.80,
@@ -1741,6 +1759,7 @@ const DESTINATIONS = [
       accommodation: { budget: 70, mid: 140, luxury: 320 },
       activities: 40, food: 50, description: "Big Texas city with world-class arts district, incredible Tex-Mex, and JFK history. Modern architecture meets cowboy culture.",
       highlights: ["Arts District", "Tex-Mex", "Shopping"],
+      touristScore: 6,
       seasonality: { winter: 1.0, spring: 1.1, summer: 0.8, fall: 1.0 } },
 
     { city: "Denver", region: "Colorado", country: "USA", lat: 39.74, lon: -104.99,
@@ -1748,6 +1767,7 @@ const DESTINATIONS = [
       accommodation: { budget: 80, mid: 160, luxury: 350 },
       activities: 55, food: 50, description: "Mile High City gateway to the Rockies. World-class skiing nearby, 300 days of sunshine, craft beer paradise, and outdoor lifestyle.",
       highlights: ["Mountains", "Craft Beer", "Outdoor Sports"],
+      touristScore: 7,
       seasonality: { winter: 1.3, spring: 1.0, summer: 1.1, fall: 1.1 } },
 
     { city: "Seattle", region: "Washington", country: "USA", lat: 47.61, lon: -122.33,
@@ -1755,6 +1775,7 @@ const DESTINATIONS = [
       accommodation: { budget: 90, mid: 180, luxury: 380 },
       activities: 45, food: 55, description: "Emerald City with iconic Pike Place Market, tech innovation, stunning mountain views, and the birthplace of coffee culture.",
       highlights: ["Pike Place", "Coffee Culture", "Nature"],
+      touristScore: 7,
       seasonality: { winter: 0.8, spring: 1.0, summer: 1.3, fall: 1.0 } },
 
     { city: "Portland", region: "Oregon", country: "USA", lat: 45.52, lon: -122.68,
@@ -1762,6 +1783,7 @@ const DESTINATIONS = [
       accommodation: { budget: 75, mid: 150, luxury: 340 },
       activities: 45, food: 55, description: "Keep Portland Weird. Craft beer, food carts, bookstores, and stunning nature nearby. Hipster paradise with incredible restaurants.",
       highlights: ["Food Scene", "Craft Beer", "Quirky Culture"],
+      touristScore: 7,
       seasonality: { winter: 0.8, spring: 1.0, summer: 1.4, fall: 1.0 } },
 
     { city: "Phoenix", region: "Arizona", country: "USA", lat: 33.45, lon: -112.07,
@@ -1769,6 +1791,7 @@ const DESTINATIONS = [
       accommodation: { budget: 60, mid: 130, luxury: 350 },
       activities: 45, food: 45, description: "Desert oasis with world-class golf, spa resorts, and Sonoran Desert beauty. Gateway to Grand Canyon and Sedona.",
       highlights: ["Desert Landscapes", "Golf", "Spas"],
+      touristScore: 6,
       seasonality: { winter: 1.4, spring: 1.2, summer: 0.5, fall: 1.0 } },
 
     { city: "Tucson", region: "Arizona", country: "USA", lat: 32.22, lon: -110.93,
@@ -1776,6 +1799,7 @@ const DESTINATIONS = [
       accommodation: { budget: 50, mid: 110, luxury: 280 },
       activities: 40, food: 40, description: "UNESCO City of Gastronomy with stunning Saguaro National Park, authentic Mexican food, and rich Old West history.",
       highlights: ["Saguaro Cacti", "Mexican Food", "Stargazing"],
+      touristScore: 5,
       seasonality: { winter: 1.3, spring: 1.1, summer: 0.5, fall: 1.0 } },
 
     { city: "Honolulu", region: "Hawaii", country: "USA", lat: 21.31, lon: -157.86,
@@ -1783,6 +1807,7 @@ const DESTINATIONS = [
       accommodation: { budget: 120, mid: 250, luxury: 550 },
       activities: 70, food: 70, description: "Tropical paradise with world-famous Waikiki Beach, Pearl Harbor history, volcanic landscapes, and authentic Hawaiian culture.",
       highlights: ["Beaches", "Surfing", "Hawaiian Culture"],
+      touristScore: 9,
       seasonality: { winter: 1.3, spring: 1.1, summer: 1.0, fall: 0.9 } },
 
     { city: "Nashville", region: "Tennessee", country: "USA", lat: 36.16, lon: -86.78,
@@ -1790,6 +1815,7 @@ const DESTINATIONS = [
       accommodation: { budget: 80, mid: 160, luxury: 350 },
       activities: 50, food: 50, description: "Music City USA with honky-tonks, the Grand Ole Opry, incredible hot chicken, and a booming food and bachelorette scene.",
       highlights: ["Country Music", "Hot Chicken", "Nightlife"],
+      touristScore: 8,
       seasonality: { winter: 0.85, spring: 1.1, summer: 1.0, fall: 1.1 } },
 
     // Additional US cities for comprehensive coverage
@@ -1903,6 +1929,7 @@ const DESTINATIONS = [
       accommodation: { budget: 80, mid: 170, luxury: 400 },
       activities: 55, food: 60, description: "World-class architecture, deep dish pizza, legendary blues and jazz, stunning lakefront, and incredible museums.",
       highlights: ["Architecture", "Deep Dish Pizza", "Museums"],
+      touristScore: 8,
       seasonality: { winter: 0.7, spring: 1.0, summer: 1.3, fall: 1.1 } },
 
     { city: "Detroit", region: "Michigan", country: "USA", lat: 42.33, lon: -83.05,
@@ -1980,18 +2007,21 @@ const DESTINATIONS = [
       type: "fly", flightFromNYC: { low: 600, mid: 950, high: 1500 },
       accommodation: { budget: 50, mid: 120, luxury: 350 },
       activities: 50, food: 50, description: "Technology & tradition",
+      touristScore: 10,
       seasonality: { winter: 0.9, spring: 1.4, summer: 1.0, fall: 1.2 } },
 
     { city: "Bangkok", region: "Central Thailand", country: "Thailand", lat: 13.76, lon: 100.5,
       type: "fly", flightFromNYC: { low: 550, mid: 850, high: 1300 },
       accommodation: { budget: 25, mid: 60, luxury: 180 },
       activities: 25, food: 20, description: "Temples & street food",
+      touristScore: 9,
       seasonality: { winter: 1.3, spring: 1.1, summer: 0.8, fall: 0.9 } },
 
     { city: "Bali", region: "Indonesia", country: "Indonesia", lat: -8.41, lon: 115.19,
       type: "fly", flightFromNYC: { low: 650, mid: 1000, high: 1500 },
       accommodation: { budget: 30, mid: 80, luxury: 250 },
       activities: 30, food: 25, description: "Beaches & spirituality",
+      touristScore: 9,
       seasonality: { winter: 0.9, spring: 1.0, summer: 1.3, fall: 1.1 } },
 
     // Central America
@@ -2116,6 +2146,7 @@ const DESTINATIONS = [
       accommodation: { budget: 45, mid: 100, luxury: 250 },
       activities: 40, food: 35, description: "Fairy-tale medieval architecture, legendary beer culture, Gothic charm, and incredible value for Europe.",
       highlights: ["Beer Culture", "Charles Bridge", "Old Town"],
+      touristScore: 9,
       seasonality: { winter: 0.9, spring: 1.0, summer: 1.3, fall: 1.1 } },
 
     { city: "Budapest", region: "Central Hungary", country: "Hungary", lat: 47.5, lon: 19.04,
@@ -2151,6 +2182,7 @@ const DESTINATIONS = [
       accommodation: { budget: 60, mid: 140, luxury: 340 },
       activities: 45, food: 50, description: "Dramatic castle, medieval Old Town, world-class festivals, and gateway to the Scottish Highlands.",
       highlights: ["Edinburgh Castle", "Fringe Festival", "Highlands"],
+      touristScore: 8,
       seasonality: { winter: 0.75, spring: 1.0, summer: 1.4, fall: 1.1 } },
 
     { city: "Manchester", region: "England", country: "UK", lat: 53.48, lon: -2.24,
@@ -2211,6 +2243,7 @@ const DESTINATIONS = [
       type: "fly", flightFromNYC: { low: 350, mid: 550, high: 850 },
       accommodation: { budget: 50, mid: 120, luxury: 300 },
       activities: 45, food: 45, description: "History, art, nightlife, and creativity collide. Vibrant neighborhoods, world-class museums, and incredible street food.",
+      touristScore: 9,
       seasonality: { winter: 0.8, spring: 1.0, summer: 1.2, fall: 1.0 } },
 
     { city: "Munich", region: "Bavaria", country: "Germany", lat: 48.14, lon: 11.58,
@@ -2255,6 +2288,7 @@ const DESTINATIONS = [
       type: "drive", flightFromNYC: { low: 350, mid: 550, high: 900 },
       accommodation: { budget: 40, mid: 90, luxury: 250 },
       activities: 40, food: 35, description: "Fairy-tale city with stunning castle, Charles Bridge, affordable beer, and incredible architecture.",
+      touristScore: 9,
       seasonality: { winter: 0.9, spring: 1.1, summer: 1.4, fall: 1.0 } },
 
     { city: "Vienna", region: "Vienna", country: "Austria", lat: 48.21, lon: 16.37,
@@ -2421,6 +2455,7 @@ const DESTINATIONS = [
       accommodation: { budget: 55, mid: 140, luxury: 350 },
       activities: 55, food: 55, description: "Renaissance birthplace with Uffizi Gallery, Duomo, Ponte Vecchio, and Tuscan wine just outside the city.",
       highlights: ["Renaissance Art", "Tuscan Food", "Architecture"],
+      touristScore: 10,
       seasonality: { winter: 0.85, spring: 1.2, summer: 1.4, fall: 1.2 } },
 
     { city: "Venice", region: "Veneto", country: "Italy", lat: 45.44, lon: 12.32,
@@ -2428,6 +2463,7 @@ const DESTINATIONS = [
       accommodation: { budget: 70, mid: 170, luxury: 450 },
       activities: 60, food: 60, description: "Unique floating city with iconic canals, St. Mark's Square, gondolas, and romantic atmosphere like nowhere else.",
       highlights: ["Canals", "St. Mark's", "Romantic"],
+      touristScore: 10,
       seasonality: { winter: 0.8, spring: 1.2, summer: 1.3, fall: 1.3 } },
 
     { city: "Naples", region: "Campania", country: "Italy", lat: 40.85, lon: 14.27,
@@ -2516,6 +2552,7 @@ const DESTINATIONS = [
       accommodation: { budget: 55, mid: 140, luxury: 400 },
       activities: 50, food: 50, description: "Pearl of the Adriatic with stunning medieval walls, Game of Thrones fame, and crystal-clear waters.",
       highlights: ["City Walls", "Old Town", "Game of Thrones"],
+      touristScore: 8,
       seasonality: { winter: 0.7, spring: 1.1, summer: 1.5, fall: 1.2 } },
 
     // Slovenia
@@ -2546,6 +2583,7 @@ const DESTINATIONS = [
       type: "fly", flightFromNYC: { low: 380, mid: 600, high: 950 },
       accommodation: { budget: 70, mid: 160, luxury: 400 },
       activities: 55, food: 60, description: "Scandinavian design capital with world-class restaurants, fairy-tale harbor, cycling culture, and hygge lifestyle.",
+      touristScore: 8,
       seasonality: { winter: 0.75, spring: 1.0, summer: 1.4, fall: 1.0 } },
 
     { city: "Stockholm", region: "Stockholm", country: "Sweden", lat: 59.33, lon: 18.07,
@@ -2659,12 +2697,14 @@ const DESTINATIONS = [
       type: "fly", flightFromNYC: { low: 450, mid: 700, high: 1100 },
       accommodation: { budget: 40, mid: 90, luxury: 220 },
       activities: 40, food: 35, description: "Where East meets West. Byzantine treasures, Ottoman grandeur, bustling bazaars, and incredible cuisine.",
+      touristScore: 9,
       seasonality: { winter: 0.8, spring: 1.1, summer: 1.3, fall: 1.1 } },
 
     { city: "Marrakech", region: "Marrakech-Safi", country: "Morocco", lat: 31.63, lon: -8.0,
       type: "fly", flightFromNYC: { low: 400, mid: 650, high: 1000 },
       accommodation: { budget: 35, mid: 80, luxury: 250 },
       activities: 40, food: 30, description: "Sensory overload in the best way. Souks, palaces, gardens, and the magical Jemaa el-Fnaa square.",
+      touristScore: 8,
       seasonality: { winter: 1.1, spring: 1.2, summer: 0.7, fall: 1.1 } },
 
     // Australia & Oceania
@@ -2672,12 +2712,14 @@ const DESTINATIONS = [
       type: "fly", flightFromNYC: { low: 800, mid: 1200, high: 2000 },
       accommodation: { budget: 70, mid: 160, luxury: 400 },
       activities: 60, food: 60, description: "Iconic harbor, stunning beaches, world-class dining, and laid-back Aussie lifestyle. A bucket-list destination.",
+      touristScore: 9,
       seasonality: { winter: 0.85, spring: 1.1, summer: 0.9, fall: 1.3 } },
 
     { city: "Melbourne", region: "Victoria", country: "Australia", lat: -37.81, lon: 144.96,
       type: "fly", flightFromNYC: { low: 800, mid: 1200, high: 2000 },
       accommodation: { budget: 65, mid: 150, luxury: 380 },
       activities: 55, food: 55, description: "Australia's cultural capital with street art, coffee culture, live music, and gateway to the Great Ocean Road.",
+      touristScore: 8,
       seasonality: { winter: 0.8, spring: 1.1, summer: 0.9, fall: 1.3 } },
 
     // Australian road trips & regional destinations
@@ -2917,7 +2959,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDatePickers();
     initAutocomplete();
     initMonthSelector();
-    initTravelTimeSelector();
+    initPlannerTabs();
     initSearchTriggers();
 
     // Wrap in try-catch to prevent breaking initialization
@@ -2927,6 +2969,36 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('API status update failed:', e);
     }
 });
+
+// Initialize planner tabs and their associated controls
+function initPlannerTabs() {
+    // Set initial state - drive tab active
+    const driveOptions = document.querySelector('.drive-options');
+    const flyOptions = document.querySelector('.fly-options');
+
+    if (driveOptions) driveOptions.classList.add('active');
+    if (flyOptions) flyOptions.classList.remove('active');
+
+    // Initialize time displays
+    const driveTimeDisplay = document.getElementById('driveTimeDisplay');
+    const flightTimeDisplay = document.getElementById('flightTimeDisplay');
+    const driveTimeInput = document.getElementById('maxDriveTime');
+    const flightTimeInput = document.getElementById('maxFlightTime');
+
+    if (driveTimeDisplay && driveTimeInput) {
+        const driveHours = parseInt(driveTimeInput.value) || 3;
+        driveTimeDisplay.textContent = `${driveHours} hr${driveHours !== 1 ? 's' : ''}`;
+    }
+
+    if (flightTimeDisplay && flightTimeInput) {
+        const flightHours = parseInt(flightTimeInput.value) || 4;
+        flightTimeDisplay.textContent = `${flightHours} hr${flightHours !== 1 ? 's' : ''}`;
+    }
+
+    // Update info displays
+    updateDriveTimeInfo();
+    updateFlightTimeInfo();
+}
 
 // Track if user has made changes since last search
 let searchParamsChanged = false;
@@ -2942,7 +3014,8 @@ function initSearchTriggers() {
         'accommodationType',
         'budgetMin',
         'budgetMax',
-        'maxTravelTime'
+        'maxDriveTime',
+        'maxFlightTime'
     ];
 
     // Debounced auto-search function
@@ -2970,8 +3043,8 @@ function initSearchTriggers() {
         }
     });
 
-    // Travel mode buttons
-    document.querySelectorAll('.travel-mode-btn').forEach(btn => {
+    // Planner tab buttons
+    document.querySelectorAll('.planner-tab').forEach(btn => {
         btn.addEventListener('click', () => {
             if (hasSearched) {
                 searchParamsChanged = true;
@@ -3146,37 +3219,58 @@ function toggleMonth(btn, monthIndex) {
 }
 
 // Initialize travel time selector
+// Legacy function - kept for backwards compatibility but now a no-op
+// Time selection is now handled by initPlannerTabs
 function initTravelTimeSelector() {
-    const select = document.getElementById('maxTravelTime');
-    select.addEventListener('change', () => {
-        updateTravelTimeInfo();
-        // Auto-search when travel time changes (if home city is selected)
-        if (selectedHomeCity) {
-            searchDestinations();
-        }
-    });
-    updateTravelTimeInfo(); // Set initial info
+    // No-op - time selection now handled by planner tabs
 }
 
-// Adjust travel time with stepper buttons
+// Adjust drive time with stepper buttons (for Driving Planner)
 function adjustTravelTime(delta) {
-    const input = document.getElementById('maxTravelTime');
-    const display = document.getElementById('travelTimeDisplay');
-    let currentValue = parseInt(input.value) || 0;
+    const input = document.getElementById('maxDriveTime');
+    const display = document.getElementById('driveTimeDisplay');
+    if (!input || !display) return;
 
-    // Increment by 1 hour, min 0, max 24
-    currentValue = Math.max(0, Math.min(24, currentValue + delta));
+    let currentValue = parseInt(input.value) || 3;
+
+    // Increment by 1 hour, min 1, max 8 (practical driving limit)
+    currentValue = Math.max(1, Math.min(8, currentValue + delta));
     input.value = currentValue;
+    maxDriveTime = currentValue;
 
     // Update display text
-    if (currentValue === 0) {
-        display.textContent = 'Any';
-    } else {
-        display.textContent = `${currentValue} hr${currentValue !== 1 ? 's' : ''}`;
-    }
+    display.textContent = `${currentValue} hr${currentValue !== 1 ? 's' : ''}`;
 
-    // Trigger the travel time info update and auto-search
-    updateTravelTimeInfo();
+    // Update info text
+    updateDriveTimeInfo();
+
+    // Debounced auto-search
+    if (selectedHomeCity && hasSearched) {
+        clearTimeout(window.travelTimeSearchTimeout);
+        window.travelTimeSearchTimeout = setTimeout(() => {
+            searchDestinations();
+        }, 500);
+    }
+}
+
+// Adjust flight time with stepper buttons (for Flying Planner)
+function adjustFlightTime(delta) {
+    const input = document.getElementById('maxFlightTime');
+    const display = document.getElementById('flightTimeDisplay');
+    if (!input || !display) return;
+
+    let currentValue = parseInt(input.value) || 4;
+
+    // Increment by 1 hour, min 1, max 16 (longest practical flight)
+    currentValue = Math.max(1, Math.min(16, currentValue + delta));
+    input.value = currentValue;
+    maxFlightTime = currentValue;
+
+    // Update display text
+    display.textContent = `${currentValue} hr${currentValue !== 1 ? 's' : ''}`;
+
+    // Update info text
+    updateFlightTimeInfo();
 
     // Debounced auto-search
     if (selectedHomeCity && hasSearched) {
@@ -3209,46 +3303,56 @@ function adjustTripDuration(delta) {
     }
 }
 
-// Update travel time info display
-function updateTravelTimeInfo() {
-    const hours = parseInt(document.getElementById('maxTravelTime').value) || 0;
-    maxTravelTime = hours;
+// Update drive time info display
+function updateDriveTimeInfo() {
+    const hours = parseInt(document.getElementById('maxDriveTime')?.value) || maxDriveTime;
+    maxDriveTime = hours;
 
-    // Also update the stepper display in case called from elsewhere
-    const display = document.getElementById('travelTimeDisplay');
-    if (display) {
-        display.textContent = hours === 0 ? 'Any' : `${hours} hr${hours !== 1 ? 's' : ''}`;
-    }
+    const infoEl = document.getElementById('driveTimeInfo');
+    if (!infoEl) return;
 
-    const infoEl = document.getElementById('travelTimeInfo');
-
-    if (hours === 0) {
-        infoEl.textContent = '🌍 Showing all destinations worldwide';
-    } else if (!selectedHomeCity) {
-        infoEl.textContent = '📍 Select your home city to see travel radius';
+    if (!selectedHomeCity) {
+        infoEl.textContent = 'Select your city to see reachable destinations';
     } else {
-        // Calculate actual radius based on selected time
-        // Using updated formula: 50 mph base + 15 min per 100 mi for longer trips
-        let driveMiles;
-        if (hours <= 4) {
-            driveMiles = Math.round(hours * 50);
-        } else {
-            // For longer trips, account for stops: solve hours = distance/50 + (distance/100)*0.25
-            // hours = distance * (1/50 + 0.0025) = distance * 0.0225
-            driveMiles = Math.round(hours / 0.0225);
-        }
-        const flyMiles = Math.round((hours - 3) * 500); // 500 mph minus 3h airport time
-
-        if (hours <= 3) {
-            infoEl.textContent = `🚗 Up to ~${driveMiles.toLocaleString()} mi drive from ${selectedHomeCity.city}`;
-        } else {
-            infoEl.textContent = `🚗 ~${driveMiles.toLocaleString()} mi drive or ✈️ ~${flyMiles.toLocaleString()} mi flight from ${selectedHomeCity.city}`;
-        }
+        // Calculate drive radius
+        const driveMiles = Math.round(hours * 55); // ~55 mph average
+        infoEl.textContent = `Destinations within ~${driveMiles.toLocaleString()} miles of ${selectedHomeCity.city}`;
     }
 
-    // Auto-zoom the map if home city is selected
-    if (selectedHomeCity && hours > 0) {
+    // Auto-zoom the map if home city is selected and in drive mode
+    if (selectedHomeCity && plannerTab === 'drive') {
         autoZoomToTravelRadius(hours);
+    }
+}
+
+// Update flight time info display
+function updateFlightTimeInfo() {
+    const hours = parseInt(document.getElementById('maxFlightTime')?.value) || maxFlightTime;
+    maxFlightTime = hours;
+
+    const infoEl = document.getElementById('flightTimeInfo');
+    if (!infoEl) return;
+
+    if (!selectedHomeCity) {
+        infoEl.textContent = 'Select your city to see flight destinations';
+    } else {
+        // Calculate flight radius (500 mph cruise speed)
+        const flyMiles = Math.round(hours * 500);
+        infoEl.textContent = `~${flyMiles.toLocaleString()} mile range from ${selectedHomeCity.city}`;
+    }
+
+    // Auto-zoom the map if home city is selected and in fly mode
+    if (selectedHomeCity && plannerTab === 'fly') {
+        autoZoomToTravelRadius(hours);
+    }
+}
+
+// Legacy function for backward compatibility
+function updateTravelTimeInfo() {
+    if (plannerTab === 'drive') {
+        updateDriveTimeInfo();
+    } else {
+        updateFlightTimeInfo();
     }
 }
 
@@ -3452,10 +3556,11 @@ function selectHomeCity(item) {
     document.getElementById('homeCityResults').classList.remove('show');
 
     // Update travel time info with new home city
-    updateTravelTimeInfo();
+    updateDriveTimeInfo();
+    updateFlightTimeInfo();
 
     // If travel time is set, auto-zoom; otherwise just center on home city
-    const hours = parseInt(document.getElementById('maxTravelTime').value) || 0;
+    const hours = getMaxTravelHours();
     if (hours > 0) {
         autoZoomToTravelRadius(hours);
     } else {
@@ -3470,10 +3575,13 @@ function selectHomeCity(item) {
 function autoZoomToTravelRadius(hours) {
     if (!selectedHomeCity) return;
 
-    // Calculate approximate radius in miles
-    const driveRadius = hours * 55; // 55 mph average
-    const flyRadius = hours > 3 ? (hours - 3) * 500 : 0; // 500 mph minus airport time
-    const maxRadius = Math.max(driveRadius, flyRadius);
+    // Calculate approximate radius based on active planner tab
+    let maxRadius;
+    if (plannerTab === 'drive') {
+        maxRadius = hours * 55; // 55 mph average for driving
+    } else {
+        maxRadius = hours * 500; // 500 mph for flights
+    }
 
     // Remove existing radius layer if any
     if (travelRadiusLayer) {
@@ -3496,13 +3604,14 @@ function autoZoomToTravelRadius(hours) {
     }).addTo(map);
     homeMarker.bindPopup(`<b>Your location</b><br>${selectedHomeCity.city}, ${selectedHomeCity.state || selectedHomeCity.country}`);
 
-    // Create travel radius visualization based on selected travel mode
+    // Create travel radius visualization based on active planner tab
     const layers = [];
 
     if (hours > 0) {
-        // Flight radius - only show for 'fly' or 'both' modes
-        if ((travelMode === 'fly' || travelMode === 'both') && flyRadius > 0) {
-            const flyRadiusMeters = flyRadius * 1609.34;
+        // Show radius based on active planner
+        if (plannerTab === 'fly') {
+            // Flight radius - dashed blue circle
+            const flyRadiusMeters = maxRadius * 1609.34;
             layers.push(L.circle([selectedHomeCity.lat, selectedHomeCity.lon], {
                 radius: flyRadiusMeters,
                 color: '#00d4ff',
@@ -3513,9 +3622,9 @@ function autoZoomToTravelRadius(hours) {
             }));
         }
 
-        // Drive radius - only show for 'drive' or 'both' modes
-        if ((travelMode === 'drive' || travelMode === 'both') && driveRadius > 0) {
-            const driveRadiusMeters = driveRadius * 1609.34;
+        // Drive radius - show for drive mode (isochrone will be displayed separately)
+        if (plannerTab === 'drive') {
+            const driveRadiusMeters = maxRadius * 1609.34;
             layers.push(L.circle([selectedHomeCity.lat, selectedHomeCity.lon], {
                 radius: driveRadiusMeters,
                 color: '#FF9800',
@@ -3544,20 +3653,46 @@ function autoZoomToTravelRadius(hours) {
 }
 
 // UI state functions
-function setTravelMode(mode) {
-    travelMode = mode;
-    document.querySelectorAll('.travel-mode-btn').forEach(btn => {
+function switchPlannerTab(mode) {
+    plannerTab = mode;
+    travelMode = mode; // Sync travel mode with planner tab
+
+    // Update tab UI
+    document.querySelectorAll('.planner-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === mode);
     });
 
-    // Update radius visualization when travel mode changes
+    // Toggle planner-specific options
+    document.querySelectorAll('.planner-options').forEach(el => {
+        el.classList.remove('active');
+    });
+    const optionsEl = document.querySelector(`.${mode}-options`);
+    if (optionsEl) {
+        optionsEl.classList.add('active');
+    }
+
+    // Update radius visualization when planner changes
     if (selectedHomeCity) {
-        const hours = parseInt(document.getElementById('maxTravelTime').value) || 0;
+        const hours = getMaxTravelHours();
         if (hours > 0) {
             autoZoomToTravelRadius(hours);
         }
-        // Auto-search when travel mode changes
+        // Auto-search when planner changes
         searchDestinations();
+    }
+}
+
+// Legacy function for backwards compatibility
+function setTravelMode(mode) {
+    switchPlannerTab(mode);
+}
+
+// Get the max travel hours based on active planner tab
+function getMaxTravelHours() {
+    if (plannerTab === 'drive') {
+        return parseInt(document.getElementById('maxDriveTime')?.value) || maxDriveTime;
+    } else {
+        return parseInt(document.getElementById('maxFlightTime')?.value) || maxFlightTime;
     }
 }
 
@@ -3614,7 +3749,9 @@ async function searchDestinations(searchInArea = false) {
     const accommodationType = document.getElementById('accommodationType').value;
     const budgetMin = parseInt(document.getElementById('budgetMin').value) || 0;
     const budgetMax = parseInt(document.getElementById('budgetMax').value) || Infinity;
-    const maxHours = parseInt(document.getElementById('maxTravelTime').value) || 0;
+
+    // Get max hours based on active planner tab
+    const maxHours = getMaxTravelHours();
 
     // Get current map bounds if searching in area
     const mapBounds = searchInArea ? map.getBounds() : null;
@@ -3652,19 +3789,13 @@ async function searchDestinations(searchInArea = false) {
                 };
             } else {
                 // Calculate bounds based on travel radius from home city
-                // Use appropriate speed based on travel mode
+                // Use appropriate speed based on active planner tab
                 let maxDistance;
-                if (maxHours === 0) {
-                    maxDistance = 12000; // "Any distance" - worldwide
-                } else if (travelMode === 'drive') {
+                if (plannerTab === 'drive') {
                     maxDistance = maxHours * 60; // ~60 mph for driving bounds
-                } else if (travelMode === 'fly') {
-                    maxDistance = (maxHours - 3) * 500 + 500; // Flight speed minus airport time
                 } else {
-                    // "Both" mode - use larger of the two
-                    const driveDistance = maxHours * 60;
-                    const flyDistance = maxHours > 3 ? (maxHours - 3) * 500 + 500 : 500;
-                    maxDistance = Math.max(driveDistance, flyDistance);
+                    // Flying planner - use flight speed
+                    maxDistance = maxHours * 500; // ~500 mph cruising speed
                 }
                 const latOffset = maxDistance / 69; // ~69 miles per degree of latitude
                 const lonOffset = maxDistance / (69 * Math.cos(selectedHomeCity.lat * Math.PI / 180));
@@ -3703,13 +3834,14 @@ async function searchDestinations(searchInArea = false) {
         const ukDests = allDestinations.filter(d => d.country === 'UK' || d.country === 'United Kingdom');
         console.log('UK destinations found:', ukDests.length, ukDests.slice(0, 3).map(d => d.city));
 
-        // Fetch isochrone for drive mode - this gives us accurate reachable area
+        // Fetch isochrone ONLY for driving planner - this gives us accurate reachable area
         // TravelTime API supports up to 4 hours
         let isochroneData = null;
         const MAX_ISOCHRONE_HOURS = 4; // TravelTime supports up to 4 hours
-        if ((travelMode === 'drive' || travelMode === 'both') && maxHours > 0 && API_KEYS.travelTime && API_KEYS.travelTime.appId) {
+
+        if (plannerTab === 'drive' && maxHours > 0 && API_KEYS.travelTime && API_KEYS.travelTime.appId) {
             const isochroneHours = Math.min(maxHours, MAX_ISOCHRONE_HOURS);
-            console.log('Fetching driving isochrone for', isochroneHours, 'hour(s)...', maxHours > MAX_ISOCHRONE_HOURS ? `(capped from ${maxHours}h due to API limit)` : '');
+            console.log('Driving Planner: Fetching isochrone for', isochroneHours, 'hour(s)...', maxHours > MAX_ISOCHRONE_HOURS ? `(capped from ${maxHours}h due to API limit)` : '');
             const timeSeconds = isochroneHours * 3600; // Convert hours to seconds
             isochroneData = await fetchDrivingIsochrone(selectedHomeCity.lat, selectedHomeCity.lon, timeSeconds);
             if (isochroneData) {
@@ -3783,15 +3915,19 @@ async function searchDestinations(searchInArea = false) {
                 effectiveType = distance <= DRIVE_THRESHOLD ? 'drive' : 'fly';
             }
 
-            // Filter by travel mode preference
-            if (travelMode === 'fly' && effectiveType === 'drive') {
+            // Filter by active planner tab
+            // Driving Planner: Only show drivable destinations
+            // Flying Planner: Only show flyable destinations (too far to drive or requires water crossing)
+            if (plannerTab === 'fly' && effectiveType === 'drive') {
+                // Flying planner - skip drivable destinations
                 filterStats.modeFilter++;
-                if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = 'modeFilter (drive in fly mode)';
+                if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = 'modeFilter (drivable in flying planner)';
                 continue;
             }
-            if (travelMode === 'drive' && effectiveType === 'fly') {
+            if (plannerTab === 'drive' && effectiveType === 'fly') {
+                // Driving planner - skip non-drivable destinations
                 filterStats.modeFilter++;
-                if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = `modeFilter (effectiveType=${effectiveType}, canDrive=${canDrive})`;
+                if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = `modeFilter (not drivable: canDrive=${canDrive})`;
                 continue;
             }
 
@@ -3802,24 +3938,33 @@ async function searchDestinations(searchInArea = false) {
             // Use generous estimate (faster speed) to avoid filtering out reachable destinations
             const roughTravelTime = calculateTravelTime(selectedHomeCity, destWithType, distance);
 
-            // For drive mode with valid isochrone (not capped), use the accurate polygon for filtering
-            const useIsochroneFilter = effectiveType === 'drive' && isochroneData && isochroneData.polygon && maxHours <= MAX_ISOCHRONE_HOURS;
-            if (useIsochroneFilter) {
-                const inIsochrone = isPointInIsochrone(dest.lat, dest.lon, isochroneData.polygon);
-                if (isUK) {
-                    console.log(`UK isochrone check: ${dest.city} at (${dest.lat}, ${dest.lon}) - inIsochrone: ${inIsochrone}`);
+            // Driving Planner: Use isochrone for accurate filtering (if available)
+            // Flying Planner: Use distance-based filtering
+            if (plannerTab === 'drive') {
+                const useIsochroneFilter = isochroneData && isochroneData.polygon && maxHours <= MAX_ISOCHRONE_HOURS;
+                if (useIsochroneFilter) {
+                    const inIsochrone = isPointInIsochrone(dest.lat, dest.lon, isochroneData.polygon);
+                    if (isUK) {
+                        console.log(`UK isochrone check: ${dest.city} at (${dest.lat}, ${dest.lon}) - inIsochrone: ${inIsochrone}`);
+                    }
+                    if (!inIsochrone) {
+                        filterStats.isochroneFilter++;
+                        if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = 'isochroneFilter (outside drivable area)';
+                        continue;
+                    }
+                } else if (maxHours > 0) {
+                    // Fallback to time-based filter when no isochrone or isochrone was capped
+                    if (roughTravelTime > maxHours * 1.3) {
+                        filterStats.timeFilter++;
+                        if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = `timeFilter (${roughTravelTime.toFixed(1)}h > ${(maxHours * 1.3).toFixed(1)}h)`;
+                        continue;
+                    }
                 }
-                if (!inIsochrone) {
-                    filterStats.isochroneFilter++;
-                    if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = 'isochroneFilter (outside drivable area)';
-                    continue;
-                }
-            } else if (maxHours > 0) {
-                // Fallback to time-based filter when no isochrone or isochrone was capped
-                const filterBuffer = effectiveType === 'drive' ? 1.3 : 1.0;
-                if (roughTravelTime > maxHours * filterBuffer) {
+            } else {
+                // Flying Planner: Use simple distance/time-based filtering
+                if (maxHours > 0 && roughTravelTime > maxHours) {
                     filterStats.timeFilter++;
-                    if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = `timeFilter (${roughTravelTime.toFixed(1)}h > ${(maxHours * filterBuffer).toFixed(1)}h)`;
+                    if (isUK) ukFilterDebug[ukFilterDebug.length - 1].filteredBy = `timeFilter (${roughTravelTime.toFixed(1)}h > ${maxHours}h)`;
                     continue;
                 }
             }
@@ -4188,8 +4333,21 @@ function formatPriceShort(price) {
     return '$' + price;
 }
 
+// Determine destination tier based on touristScore
+// Tier 1 (7-10): Major destinations - big marker, real images
+// Tier 2 (4-6): Secondary destinations - medium marker, placeholder image
+// Tier 3 (1-3 or unrated): Minor destinations - dot marker, minimal popup
+function getDestinationTier(dest) {
+    const score = dest.touristScore || 3; // Default unrated to tier 3
+    if (score >= 7) return 1;
+    if (score >= 4) return 2;
+    return 3;
+}
+
 // Add destination marker to map
 function addDestinationMarker(dest, travelers, nights) {
+    const tier = getDestinationTier(dest);
+
     // Determine marker class based on cost
     let markerClass = 'marker-moderate';
     const perDay = dest.costs.perDay;
@@ -4199,10 +4357,10 @@ function addDestinationMarker(dest, travelers, nights) {
 
     if (dest.type === 'drive') markerClass += ' marker-drive';
 
-    // Build weather display for marker
+    // Build weather display for marker (only for tier 1 & 2)
     let weatherDisplay = '';
-    if (dest.weather) {
-        const weatherEmoji = dest.weather.conditions.split(' ')[0]; // Get just the emoji
+    if (dest.weather && tier <= 2) {
+        const weatherEmoji = dest.weather.conditions.split(' ')[0];
         const isClimate = dest.weather.type === 'climate';
         const tempPrefix = isClimate ? '~' : '';
         weatherDisplay = `<span class="marker-weather" title="${isClimate ? 'Typical weather for ' + dest.weather.monthName : 'Forecast'}">${weatherEmoji} ${tempPrefix}${dest.weather.avgHigh}°</span>`;
@@ -4211,35 +4369,92 @@ function addDestinationMarker(dest, travelers, nights) {
     // Format price for display
     const formattedPrice = formatPriceShort(dest.costs.total);
 
-    const icon = L.divIcon({
-        className: 'custom-div-icon',
-        html: `
-            <div class="custom-marker ${markerClass}">
-                <span class="marker-city">${dest.city}</span>
-                <span class="marker-price">${formattedPrice}</span>
-                <div class="marker-details">
-                    <span class="marker-type">${dest.type === 'drive' ? 'Drive' : 'Fly'}</span>
-                    ${weatherDisplay}
-                </div>
-            </div>
-        `,
-        iconSize: [100, 65],
-        iconAnchor: [50, 32]
-    });
+    let icon;
 
-    const popup = createPopupContent(dest, travelers, nights);
+    if (tier === 1) {
+        // Tier 1: Large full-featured marker
+        icon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `
+                <div class="custom-marker marker-tier1 ${markerClass}">
+                    <span class="marker-city">${dest.city}</span>
+                    <span class="marker-price">${formattedPrice}</span>
+                    <div class="marker-details">
+                        <span class="marker-type">${dest.type === 'drive' ? 'Drive' : 'Fly'}</span>
+                        ${weatherDisplay}
+                    </div>
+                </div>
+            `,
+            iconSize: [110, 70],
+            iconAnchor: [55, 35]
+        });
+    } else if (tier === 2) {
+        // Tier 2: Medium marker
+        icon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `
+                <div class="custom-marker marker-tier2 ${markerClass}">
+                    <span class="marker-city">${dest.city}</span>
+                    <span class="marker-price">${formattedPrice}</span>
+                    <div class="marker-details">
+                        <span class="marker-type">${dest.type === 'drive' ? 'Drive' : 'Fly'}</span>
+                        ${weatherDisplay}
+                    </div>
+                </div>
+            `,
+            iconSize: [90, 55],
+            iconAnchor: [45, 27]
+        });
+    } else {
+        // Tier 3: Dot marker with minimal info
+        icon = L.divIcon({
+            className: 'custom-div-icon marker-dot-container',
+            html: `
+                <div class="marker-dot ${markerClass}" title="${dest.city} - ${formattedPrice}">
+                    <span class="dot-price">${formattedPrice}</span>
+                </div>
+            `,
+            iconSize: [50, 30],
+            iconAnchor: [25, 15]
+        });
+    }
+
+    const popup = createPopupContent(dest, travelers, nights, tier);
+
+    // Adjust popup size based on tier
+    const popupOptions = tier === 3
+        ? { maxWidth: 320, minWidth: 280 }
+        : { maxWidth: 550, minWidth: 520 };
 
     const marker = L.marker([dest.lat, dest.lon], { icon })
-        .bindPopup(popup, { maxWidth: 550, minWidth: 520 })
+        .bindPopup(popup, popupOptions)
         .addTo(map);
 
     markers.push(marker);
 }
 
 // Create popup content for destination
-function createPopupContent(dest, travelers, nights) {
+function createPopupContent(dest, travelers, nights, tier = 1) {
     const costs = dest.costs;
     const travelTimeStr = formatTravelTime(dest.travelTime);
+
+    // Tier 3: Minimal popup (just name, price, basic info)
+    if (tier === 3) {
+        const transportIcon = costs.transportType === 'drive' ? '🚗' : '✈️';
+        return `
+            <div class="popup-content popup-minimal">
+                <div class="popup-minimal-header">
+                    <h3 class="popup-minimal-title">${dest.city}</h3>
+                    <span class="popup-minimal-region">${dest.region}, ${dest.country}</span>
+                </div>
+                <div class="popup-minimal-info">
+                    <span class="popup-minimal-badge">${transportIcon} ${travelTimeStr}</span>
+                    <span class="popup-minimal-price">$${costs.total.toLocaleString()}</span>
+                </div>
+                <div class="popup-minimal-perday">$${costs.perDay}/day · ${nights} nights</div>
+            </div>
+        `;
+    }
 
     // Generate a unique ID for this popup's collapsible
     const popupId = `popup-${dest.city.replace(/\s+/g, '-')}-${Date.now()}`;
@@ -4247,7 +4462,9 @@ function createPopupContent(dest, travelers, nights) {
     // Single neutral placeholder - world map that works for any destination type
     const placeholderUrl = 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=600&h=300&fit=crop';
 
-    // Hero section with image (use destination image if available, otherwise placeholder)
+    // Hero section with image
+    // Tier 1 & Tier 2: Use real Wikipedia image (with placeholder fallback)
+    // This makes destination cards more visually engaging
     const imageUrl = dest.image?.url || placeholderUrl;
     const imageCredit = dest.image?.credit
         ? `<div class="popup-hero-credit"><a href="${dest.image.credit.link}" target="_blank" rel="noopener">📷 ${dest.image.credit.name}</a></div>`
