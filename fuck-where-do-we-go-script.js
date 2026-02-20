@@ -3561,7 +3561,6 @@ function selectHomeCity(item) {
     // Update travel time info with new home city
     updateDriveTimeInfo();
     updateFlightTimeInfo();
-    updateRoadTripHomeDisplay();
 
     // If travel time is set, auto-zoom; otherwise just center on home city
     const hours = getMaxTravelHours();
@@ -3674,9 +3673,10 @@ function switchPlannerTab(mode) {
     const optionsEl = document.querySelector(`.${mode}-options`);
     if (optionsEl) optionsEl.classList.add('active');
 
+    // Toggle road trip mode class on sidebar for CSS-driven visibility
+    document.querySelector('.sidebar').classList.toggle('mode-roadtrip', mode === 'roadtrip');
+
     if (mode === 'roadtrip') {
-        // Entering road trip mode — update the home city display
-        updateRoadTripHomeDisplay();
 
         // Show nearby destinations on map so user can see what's around
         if (selectedHomeCity) {
@@ -3702,21 +3702,6 @@ function switchPlannerTab(mode) {
             if (hours > 0) autoZoomToTravelRadius(hours);
             searchDestinations();
         }
-    }
-}
-
-// Update the home city label in the road trip options panel
-function updateRoadTripHomeDisplay() {
-    const labelEl = document.getElementById('roadtripHomeLabel');
-    if (!labelEl) return;
-    if (selectedHomeCity) {
-        const parts = [selectedHomeCity.city];
-        if (selectedHomeCity.state) parts.push(selectedHomeCity.state);
-        labelEl.textContent = parts.join(', ');
-        labelEl.style.color = '#fff';
-    } else {
-        labelEl.textContent = 'Set your home city above first';
-        labelEl.style.color = '#888';
     }
 }
 
